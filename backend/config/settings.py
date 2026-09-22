@@ -14,10 +14,11 @@ ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", default="localhost,127.
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
-    "corsheaders", "rest_framework", "rest_framework_simplejwt", "store",
+    "corsheaders", "rest_framework", "rest_framework_simplejwt", "store", 'corsheaders',
 ]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -69,3 +70,10 @@ RAZORPAY_KEY_SECRET=env("RAZORPAY_KEY_SECRET", default="")
 RAZORPAY_WEBHOOK_SECRET=env("RAZORPAY_WEBHOOK_SECRET", default="")
 FRONTEND_URL=env("FRONTEND_URL", default="http://localhost:5173")
 DEFAULT_AUTO_FIELD="django.db.models.BigAutoField"
+
+
+CORS_ALLOWED_ORIGINS = [
+    "https://narveka-ecommerce-68cf.vercel.app",
+]
+
+CORS_ALLOW_CREDENTIALS = True

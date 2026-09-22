@@ -9,6 +9,17 @@ import type { Product } from '../types';
 import { INITIAL_PRODUCTS } from '../data/products';
 import { api } from '../api';
 
+interface ApiProductImage {
+  id: number;
+  url: string;
+  alt: string;
+  sort_order: number;
+}
+
+interface ApiProduct extends Omit<Product, 'images'> {
+  images: ApiProductImage[];
+}
+
 interface ProductContextType {
   products: Product[];
   loading: boolean;
@@ -16,47 +27,46 @@ interface ProductContextType {
 }
 
 const ProductContext =
-  createContext<ProductContextType | undefined>(undefined);
+  createContext<ProductContextType | undefined>(
+    undefined
+  );
 
 export const ProductProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  // Always start with the local catalogue.
   const [products, setProducts] =
     useState<Product[]>(INITIAL_PRODUCTS);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
   const refresh = async () => {
     try {
       setLoading(true);
 
-      const data = await api<Product[]>('/products/');
+      const data =
+        await api<ApiProduct[]>('/products/');
 
-      // Only use API products if they are valid
-      // and actually contain usable image URLs.
-      if (
-        Array.isArray(data) &&
-        data.length > 0 &&
-        data.every(
-          (product) =>
-            Array.isArray(product.images) &&
-            product.images.length > 0 &&
-            product.images.every(
-              (image) =>
-                typeof image === 'string' &&
-                image.startsWith('http')
+      const formattedProducts: Product[] =
+        data.map((product) => ({
+          ...product,
+
+          // Django sends image objects.
+          // Frontend Product type expects string URLs.
+          images: product.images
+            .sort(
+              (a, b) =>
+                a.sort_order - b.sort_order
             )
-        )
-      ) {
-        setProducts(data);
-      } else {
-        console.warn(
-          'NARVEKA API returned invalid product images. Using local catalogue.'
-        );
+            .map((image) => image.url),
+        }));
 
-        setProducts(INITIAL_PRODUCTS);
-      }
+      setProducts(formattedProducts);
+
+      console.log(
+        'NARVEKA products loaded from Render:',
+        formattedProducts
+      );
     } catch (error) {
       console.warn(
         'NARVEKA API unavailable; using local catalogue.',
@@ -87,7 +97,8 @@ export const ProductProvider: React.FC<{
 };
 
 export const useProducts = () => {
-  const context = useContext(ProductContext);
+  const context =
+    useContext(ProductContext);
 
   if (!context) {
     throw new Error(
