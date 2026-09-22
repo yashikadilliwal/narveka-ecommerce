@@ -20,8 +20,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [showSizeFlyout, setShowSizeFlyout] = useState(false);
 
   const inWishlist = isInWishlist(product.id);
-  const mainImage = product.images[0];
-  const hoverImage = product.images[1] || product.images[0];
+ const mainImage = product.images[0]?.url;
+const hoverImage = product.images[1]?.url || mainImage;
 
   const handleQuickAddSize = (e: React.MouseEvent, size: string) => {
     e.stopPropagation();

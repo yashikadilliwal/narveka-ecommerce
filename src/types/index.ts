@@ -27,7 +27,12 @@ export interface Product {
   categoryLabel: string;
   colors: ProductColor[];
   sizes: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
-  images: string[];
+  images: {
+  id: number;
+  url: string;
+  alt: string;
+  sort_order: number;
+}[];
   description: string;
   details: string[];
   fabric: string;
