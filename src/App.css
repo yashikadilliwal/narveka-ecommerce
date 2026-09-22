@@ -1,0 +1,13 @@
+/* App-wide luxury styles */
+.gold-border-glow {
+  box-shadow: 0 0 15px rgba(184, 155, 94, 0.15);
+}
+
+.text-stroke {
+  -webkit-text-stroke: 1px #8A8780;
+  color: transparent;
+}
+
+.text-stroke:hover {
+  color: #0B0B0B;
+}

@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-black: #0B0B0B;
+    --brand-charcoal: #171717;
+    --brand-offwhite: #F5F3EE;
+    --brand-ivory: #FAF9F6;
+    --brand-gold: #B89B5E;
+    --brand-stone: #8A8780;
+    --brand-lightgrey: #E5E3DE;
+  }
+
+  body {
+    background-color: #FAF9F6;
+    color: #0B0B0B;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Custom subtle scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F5F3EE;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #8A8780;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #171717;
+  }
+}
+
+@layer utilities {
+  .editorial-title {
+    font-family: 'Cinzel', 'Playfair Display', serif;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .editorial-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .luxury-gold-border {
+    border-color: rgba(184, 155, 94, 0.35);
+  }
+
+  .luxury-gold-gradient {
+    background: linear-gradient(135deg, #B89B5E 0%, #E2D1A9 50%, #9C7D40 100%);
+  }
+
+  .gold-shimmer {
+    background: linear-gradient(90deg, #B89B5E, #E5CE9F, #B89B5E);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
