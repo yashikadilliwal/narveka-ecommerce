@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+
 import type { Product } from '../types';
 import { INITIAL_PRODUCTS } from '../data/products';
 import { api } from '../api';
@@ -9,12 +15,16 @@ interface ProductContextType {
   refresh: () => Promise<void>;
 }
 
-const ProductContext = createContext<ProductContextType | undefined>(undefined);
+const ProductContext =
+  createContext<ProductContextType | undefined>(undefined);
 
-export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+export const ProductProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  // Always start with the local catalogue.
+  const [products, setProducts] =
+    useState<Product[]>(INITIAL_PRODUCTS);
+
   const [loading, setLoading] = useState(false);
 
   const refresh = async () => {
@@ -23,8 +33,29 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const data = await api<Product[]>('/products/');
 
-      if (Array.isArray(data)) {
+      // Only use API products if they are valid
+      // and actually contain usable image URLs.
+      if (
+        Array.isArray(data) &&
+        data.length > 0 &&
+        data.every(
+          (product) =>
+            Array.isArray(product.images) &&
+            product.images.length > 0 &&
+            product.images.every(
+              (image) =>
+                typeof image === 'string' &&
+                image.startsWith('http')
+            )
+        )
+      ) {
         setProducts(data);
+      } else {
+        console.warn(
+          'NARVEKA API returned invalid product images. Using local catalogue.'
+        );
+
+        setProducts(INITIAL_PRODUCTS);
       }
     } catch (error) {
       console.warn(
