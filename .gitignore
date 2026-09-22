@@ -31,3 +31,4 @@ backend/staticfiles/
 .env
 .env.*
 !.env.example
+.env
