@@ -1,20 +1,68 @@
-import React, {createContext,useContext,useEffect,useState} from 'react';
-import type {Product} from '../types';
-import {INITIAL_PRODUCTS} from '../data/products';
-import {api} from '../api';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { Product } from '../types';
+import { INITIAL_PRODUCTS } from '../data/products';
+import { api } from '../api';
 
-interface ProductContextType { products: Product[]; loading:boolean; refresh:()=>Promise<void>; }
-const ProductContext=createContext<ProductContextType|undefined>(undefined);
+interface ProductContextType {
+  products: Product[];
+  loading: boolean;
+  refresh: () => Promise<void>;
+}
 
-export const ProductProvider:React.FC<{children:React.ReactNode}>=({children})=>{
-  const [products,setProducts]=useState<Product[]>(INITIAL_PRODUCTS);
-  const [loading,setLoading]=useState(true);
-  const refresh=async()=>{
-    try { setLoading(true); const data=await api<Product[]>('/products/'); setProducts(data); }
-    catch(e){ console.warn('NARVEKA API unavailable; using local catalogue.',e); }
-    finally { setLoading(false); }
+const ProductContext = createContext<ProductContextType | undefined>(undefined);
+
+export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = async () => {
+    try {
+      setLoading(true);
+
+      const data = await api<Product[]>('/products/');
+
+      if (Array.isArray(data)) {
+        setProducts(data);
+      }
+    } catch (error) {
+      console.warn(
+        'NARVEKA API unavailable; using local catalogue.',
+        error
+      );
+
+      setProducts(INITIAL_PRODUCTS);
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(()=>{refresh();},[]);
-  return <ProductContext.Provider value={{products,loading,refresh}}>{children}</ProductContext.Provider>;
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  return (
+    <ProductContext.Provider
+      value={{
+        products,
+        loading,
+        refresh,
+      }}
+    >
+      {children}
+    </ProductContext.Provider>
+  );
 };
-export const useProducts=()=>{const c=useContext(ProductContext); if(!c) throw new Error('useProducts must be used inside ProductProvider'); return c;};
+
+export const useProducts = () => {
+  const context = useContext(ProductContext);
+
+  if (!context) {
+    throw new Error(
+      'useProducts must be used inside ProductProvider'
+    );
+  }
+
+  return context;
+};
