@@ -55,7 +55,7 @@ MEDIA_ROOT=BASE_DIR/"media"
 STATICFILES_STORAGE="whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CORS_ALLOWED_ORIGINS=[x.strip() for x in env("CORS_ALLOWED_ORIGINS", default="http://localhost:5173").split(",") if x.strip()]
-CSRF_TRUSTED_ORIGINS=CORS_ALLOWED_ORIGINS
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 REST_FRAMEWORK={
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
