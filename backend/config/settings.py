@@ -136,6 +136,9 @@ STATICFILES_STORAGE = (
 # --------------------------------------------------
 
 CORS_ALLOWED_ORIGINS = [
+    "https://narveka.in",
+    "https://www.narveka.in",
+    
     "https://narveka-ecommerce-68cf.vercel.app",
     "http://localhost:5173",
     "http://localhost:5174",
@@ -147,6 +150,8 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://narveka-ecommerce-68cf.vercel.app",
     "http://localhost:5173",
+    "https://narveka.in",
+    "https://www.narveka.in",
 ]
 
 
