@@ -44,8 +44,8 @@ export const ProductProvider: React.FC<{
     try {
       setLoading(true);
 
-      const data =
-        await api<ApiProduct[]>('/products/');
+      
+      const data = await api<ApiProduct[]>('/api/products/');
 
       const formattedProducts: Product[] =
         data.map((product) => ({
