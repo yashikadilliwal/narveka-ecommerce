@@ -1,9 +1,8 @@
 
 const API_BASE = (
   import.meta.env.VITE_API_URL ||
-  'https://narveka-backend.onrender.com'
+  'https://narveka-backend.onrender.com/api'
 ).replace(/\/+$/, '');
-
 
 export const getAccessToken = () =>
   localStorage.getItem('narveka_access_token');
