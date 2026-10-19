@@ -36,7 +36,7 @@ export const HomePage: React.FC = () => {
         {/* Background Editorial Fashion Imagery with Dark Overlay */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://res.cloudinary.com/njdstqqc/image/upload/v1792419942/IMG_5639.png"
+            src="https://res.cloudinary.com/njdstqqc/image/upload/v1792420907/IMG_5807.png"
             alt="NARVEKA Editorial Hero"
             className="w-full h-full object-cover object-center opacity-45 scale-105 animate-pulse-subtle"
           />
@@ -54,10 +54,20 @@ export const HomePage: React.FC = () => {
             <span className="text-brand-gold text-xs">✦</span>
           </div>
 
-          
-          
+          {/* Large Editorial Headline */}
+          <h1 className="editorial-title text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-luxury text-brand-ivory mb-4 drop-shadow-md">
+            NARVEKA
+          </h1>
 
-        
+          {/* Brand Tagline */}
+          <p className="text-lg sm:text-2xl md:text-3xl text-brand-gold font-light tracking-widest uppercase mb-4">
+            {BRAND.tagline}
+          </p>
+
+          {/* Subtitle Statement */}
+          <p className="text-sm sm:text-base md:text-lg text-brand-offwhite/90 max-w-2xl font-light tracking-wide leading-relaxed mb-10">
+            {BRAND.taglineSecondary} Heavyweight drape, architectural silhouettes, and pure minimalist restraint.
+          </p>
 
           {/* Call to Actions */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
