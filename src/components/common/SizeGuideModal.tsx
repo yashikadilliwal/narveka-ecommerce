@@ -47,16 +47,16 @@ export const SizeGuideModal: React.FC = () => {
 
   const shirtData = {
     in: [
-      { size: 'S', chest: '44', length: '29.0', shoulder: '20.0', sleeve: '25.0' },
-      { size: 'M', chest: '46', length: '30.0', shoulder: '21.0', sleeve: '25.5' },
-      { size: 'L', chest: '48', length: '31.0', shoulder: '22.0', sleeve: '26.0' },
-      { size: 'XL', chest: '50', length: '32.0', shoulder: '23.0', sleeve: '26.5' },
+      { size: 'S', chest: '40', length: '27.0', shoulder: '19.0', sleeve: '25.0' },
+      { size: 'M', chest: '42', length: '28.0', shoulder: '20.0', sleeve: '25.5' },
+      { size: 'L', chest: '44', length: '29.0', shoulder: '21.0', sleeve: '26.0' },
+      { size: 'XL', chest: '46', length: '30.0', shoulder: '22.0', sleeve: '26.5' },
     ],
     cm: [
-      { size: 'S', chest: '112', length: '74', shoulder: '51', sleeve: '63' },
-      { size: 'M', chest: '117', length: '76', shoulder: '53', sleeve: '65' },
-      { size: 'L', chest: '122', length: '79', shoulder: '56', sleeve: '66' },
-      { size: 'XL', chest: '127', length: '81', shoulder: '58', sleeve: '67' },
+      { size: 'S', chest: '108', length: '69', shoulder: '48', sleeve: '58' },
+      { size: 'M', chest: '114', length: '71', shoulder: '50', sleeve: '60' },
+      { size: 'L', chest: '120', length: '73', shoulder: '52', sleeve: '62' },
+      { size: 'XL', chest: '126', length: '75', shoulder: '54', sleeve: '64' },
     ],
   };
 
