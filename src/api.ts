@@ -31,14 +31,13 @@ export async function api<T = any>(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(
-    `${API_BASE}${endpoint}`,
-    {
-      ...options,
-      headers,
-    }
-  );
-
+ const response = await fetch(
+  `${API_BASE}/api${endpoint}`,
+  {
+    ...options,
+    headers,
+  }
+);
   const text = await response.text();
 
   let data: any = {};
