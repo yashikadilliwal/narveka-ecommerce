@@ -36,7 +36,7 @@ export const HomePage: React.FC = () => {
         {/* Background Editorial Fashion Imagery with Dark Overlay */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=2000&auto=format&fit=crop"
+            src="https://res.cloudinary.com/njdstqqc/image/upload/v1792419942/IMG_5639.png"
             alt="NARVEKA Editorial Hero"
             className="w-full h-full object-cover object-center opacity-45 scale-105 animate-pulse-subtle"
           />
