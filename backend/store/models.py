@@ -102,7 +102,7 @@ class Coupon(models.Model):
     def __str__(self): return self.code
 
 class Order(models.Model):
-    PAYMENT_CHOICES=[("razorpay","Razorpay"),("cod","Cash on Delivery")]
+    PAYMENT_CHOICES=[("razorpay","Razorpay")]
     STATUS=[("pending","Pending"),("confirmed","Confirmed"),("processing","Processing"),("shipped","Shipped"),("delivered","Delivered"),("cancelled","Cancelled")]
     PAYMENT_STATUS=[("created","Created"),("paid","Paid"),("failed","Failed"),("cod_pending","COD Pending"),("refunded","Refunded")]
     user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,related_name="orders")

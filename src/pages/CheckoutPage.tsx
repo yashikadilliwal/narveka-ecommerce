@@ -4,18 +4,33 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '../context/NavigationContext';
 import { useToast } from '../context/ToastContext';
 import { BRAND } from '../config/brand';
-import { ShieldCheck, Lock, CreditCard, Smartphone, Building2, ArrowLeft } from 'lucide-react';
-import { api } from '../api';
+import {
+  ShieldCheck,
+  Lock,
+  CreditCard,
+  Smartphone,
+  Building2,
+  ArrowLeft,
+} from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
-  const { cart, subtotal, discount, appliedCoupon, shippingFee, total, clearCart } = useCart();
+  const {
+    cart,
+    subtotal,
+    discount,
+    appliedCoupon,
+    shippingFee,
+    total,
+    clearCart,
+  } = useCart();
+
   const { user, addresses, createOrder } = useAuth();
   const { navigateTo, setLastConfirmedOrderId } = useNavigation();
   const { showToast } = useToast();
 
   const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
 
-  // Customer & Shipping Form State
+  // Customer and shipping form state
   const [fullName, setFullName] = useState(defaultAddr?.fullName || user?.name || '');
   const [email, setEmail] = useState(defaultAddr?.email || user?.email || '');
   const [phone, setPhone] = useState(defaultAddr?.phone || user?.phone || '');
@@ -25,21 +40,22 @@ export const CheckoutPage: React.FC = () => {
   const [state, setState] = useState(defaultAddr?.state || 'Karnataka');
   const [pincode, setPincode] = useState(defaultAddr?.pincode || '560038');
 
-  // Shipping Method
+  // Shipping method
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'priority'>('standard');
 
-  // Payment Selection structured for Razorpay
-  const [selectedPaymentMode, setSelectedPaymentMode] = useState<'razorpay' | 'cod'>('razorpay');
+  // Razorpay is the only payment method
   const [razorpayMethod, setRazorpayMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
-
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // If cart is empty, redirect or display prompt
   if (cart.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4">
-        <h2 className="editorial-title text-2xl font-bold text-brand-black">Your Bag is Empty</h2>
-        <p className="text-xs text-brand-stone">Add garments to your shopping bag before proceeding to checkout.</p>
+        <h2 className="editorial-title text-2xl font-bold text-brand-black">
+          Your Bag is Empty
+        </h2>
+        <p className="text-xs text-brand-stone">
+          Add garments to your shopping bag before proceeding to checkout.
+        </p>
         <button
           onClick={() => navigateTo('shop')}
           className="px-6 py-3 bg-brand-black text-brand-ivory text-xs uppercase font-semibold tracking-luxury hover:bg-brand-charcoal hover:text-brand-gold transition-colors"
@@ -50,23 +66,45 @@ export const CheckoutPage: React.FC = () => {
     );
   }
 
-  const effectiveShipping = shippingMethod === 'priority' ? shippingFee + 150 : shippingFee;
+  const effectiveShipping =
+    shippingMethod === 'priority' ? shippingFee + 150 : shippingFee;
   const grandTotal = total + (shippingMethod === 'priority' ? 150 : 0);
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !addressLine1.trim() || !pincode.trim()) {
+
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !phone.trim() ||
+      !addressLine1.trim() ||
+      !pincode.trim()
+    ) {
       showToast('Please complete all mandatory contact and shipping fields.', 'error');
       return;
     }
+
     if (!user) {
       showToast('Please sign in or create an account before checkout.', 'error');
       navigateTo('account');
       return;
     }
 
+    if (isProcessing) return;
+
     setIsProcessing(true);
-    const shippingAddress = { fullName, email, phone, addressLine1, addressLine2, city, state, pincode };
+
+    const shippingAddress = {
+      fullName,
+      email,
+      phone,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      pincode,
+    };
+
     const payload = {
       items: cart.map((item) => ({
         productId: item.product.slug,
@@ -77,23 +115,16 @@ export const CheckoutPage: React.FC = () => {
       shippingAddress,
       shippingMethod,
       couponCode: appliedCoupon || '',
-      paymentMethod: selectedPaymentMode,
+      paymentMethod: 'razorpay',
     };
 
     try {
       const order = await createOrder(payload);
 
-      if (selectedPaymentMode === 'cod') {
-        clearCart();
-        await api('/orders/', {}, true).catch(() => null);
-        setLastConfirmedOrderId(order.orderNumber);
-        navigateTo('order-confirmation');
-        showToast(`Order ${order.orderNumber} confirmed.`, 'success');
-        return;
-      }
-
       if (!(window as any).Razorpay) {
-        throw new Error('Razorpay Checkout could not load. Please refresh and try again.');
+        throw new Error(
+          'Razorpay Checkout could not load. Please refresh and try again.'
+        );
       }
 
       const razorpay = new (window as any).Razorpay({
@@ -104,27 +135,52 @@ export const CheckoutPage: React.FC = () => {
         description: 'NARVEKA — Modern. Minimal. You.',
         image: BRAND.logoUrl,
         order_id: order.razorpayOrderId,
-        prefill: { name: fullName, email, contact: phone },
-        notes: { order_number: order.orderNumber },
-        theme: { color: BRAND.colors.black },
-        modal: { ondismiss: () => setIsProcessing(false) },
+        prefill: {
+          name: fullName,
+          email,
+          contact: phone,
+        },
+        notes: {
+          order_number: order.orderNumber,
+          preferred_payment_method: razorpayMethod,
+        },
+        theme: {
+          color: BRAND.colors.black,
+        },
+        modal: {
+          ondismiss: () => setIsProcessing(false),
+        },
         handler: async (response: any) => {
           try {
-            await api('/orders/verify-payment/', {
-              method: 'POST',
-              body: JSON.stringify({
-                orderId: order.orderId,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            }, true);
+            await import('../api').then(({ api }) =>
+              api(
+                '/orders/verify-payment/',
+                {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    orderId: order.orderId,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                  }),
+                },
+                true
+              )
+            );
+
             clearCart();
             setLastConfirmedOrderId(order.orderNumber);
             navigateTo('order-confirmation');
-            showToast(`Payment successful. Order ${order.orderNumber} is confirmed.`, 'success');
+            showToast(
+              `Payment successful. Order ${order.orderNumber} is confirmed.`,
+              'success'
+            );
           } catch (err) {
-            showToast((err as Error).message || 'Payment verification failed. Please contact NARVEKA support.', 'error');
+            showToast(
+              (err as Error).message ||
+                'Payment verification failed. Please contact NARVEKA support.',
+              'error'
+            );
           } finally {
             setIsProcessing(false);
           }
@@ -133,7 +189,11 @@ export const CheckoutPage: React.FC = () => {
 
       razorpay.on('payment.failed', (response: any) => {
         setIsProcessing(false);
-        showToast(response?.error?.description || 'Payment failed. Your order was not confirmed.', 'error');
+        showToast(
+          response?.error?.description ||
+            'Payment failed. Your order was not confirmed.',
+          'error'
+        );
       });
 
       razorpay.open();
@@ -145,8 +205,8 @@ export const CheckoutPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-      {/* Return to cart */}
       <button
+        type="button"
         onClick={() => navigateTo('shop')}
         className="inline-flex items-center gap-1.5 text-xs text-brand-stone hover:text-brand-black uppercase tracking-wider mb-8 transition-colors"
       >
@@ -155,16 +215,15 @@ export const CheckoutPage: React.FC = () => {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-        {/* Left Column: Form (Contact, Shipping, Payment) */}
         <form onSubmit={handleSubmitOrder} className="lg:col-span-7 space-y-10">
-          {/* 1. Contact Info */}
+          {/* 1. Contact information */}
           <div className="bg-brand-offwhite p-6 sm:p-8 border border-brand-lightgrey space-y-4 shadow-sm">
             <div className="flex items-center justify-between pb-3 border-b border-brand-lightgrey">
               <h2 className="text-xs font-bold uppercase tracking-luxury text-brand-black flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-brand-black text-brand-ivory flex items-center justify-center text-[10px]">
                   1
                 </span>
-                <span>Contact & Collector Details</span>
+                <span>Contact &amp; Collector Details</span>
               </h2>
               <span className="text-[11px] text-brand-stone">Step 1 of 3</span>
             </div>
@@ -214,7 +273,7 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Shipping Address */}
+          {/* 2. Shipping address */}
           <div className="bg-brand-offwhite p-6 sm:p-8 border border-brand-lightgrey space-y-4 shadow-sm">
             <div className="flex items-center justify-between pb-3 border-b border-brand-lightgrey">
               <h2 className="text-xs font-bold uppercase tracking-luxury text-brand-black flex items-center gap-2">
@@ -298,7 +357,7 @@ export const CheckoutPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Shipping Speed Option */}
+              {/* Shipping speed */}
               <div className="pt-2 space-y-2">
                 <label className="text-xs uppercase tracking-wider text-brand-charcoal font-semibold">
                   Delivery Method
@@ -323,7 +382,9 @@ export const CheckoutPage: React.FC = () => {
                       <p className="font-semibold text-brand-black">Standard Express Air</p>
                       <p className="text-brand-stone text-[11px]">3 - 5 Business Days</p>
                       <p className="font-medium text-emerald-700 mt-1">
-                        {shippingFee === 0 ? 'Complimentary' : `${BRAND.currency.symbol}${shippingFee}`}
+                        {shippingFee === 0
+                          ? 'Complimentary'
+                          : `${BRAND.currency.symbol}${shippingFee}`}
                       </p>
                     </div>
                   </label>
@@ -356,7 +417,7 @@ export const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Payment Section (Structured for Razorpay) */}
+          {/* 3. Secure payment — Razorpay only */}
           <div className="bg-brand-offwhite p-6 sm:p-8 border border-brand-lightgrey space-y-5 shadow-sm">
             <div className="flex items-center justify-between pb-3 border-b border-brand-lightgrey">
               <h2 className="text-xs font-bold uppercase tracking-luxury text-brand-black flex items-center gap-2">
@@ -368,108 +429,76 @@ export const CheckoutPage: React.FC = () => {
               <span className="text-[11px] text-brand-stone">Step 3 of 3</span>
             </div>
 
-            {/* Razorpay Gateway Structured Info Banner */}
             <div className="p-3.5 bg-brand-charcoal text-brand-ivory border-l-2 border-brand-gold text-xs space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-semibold uppercase tracking-luxury text-brand-gold flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-brand-gold" />
-                  Live Razorpay Checkout
+                  Secure Razorpay Checkout
                 </span>
                 <span className="text-[10px] uppercase tracking-wider text-brand-stone bg-brand-black px-2 py-0.5 border border-brand-stone/30">
-                  Live/Test Key
+                  Test/Live Key
                 </span>
               </div>
               <p className="text-brand-stone text-[11px] leading-relaxed">
-                Secure Razorpay Checkout is connected to the NARVEKA backend. Your payment is verified server-side before the order is marked paid.
+                Your payment is verified server-side before the order is marked paid.
               </p>
             </div>
 
-            {/* Payment Method Selector */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPaymentMode('razorpay')}
-                  className={`p-3.5 text-left border transition-all ${
-                    selectedPaymentMode === 'razorpay'
-                      ? 'border-brand-black bg-brand-ivory ring-1 ring-brand-black'
-                      : 'border-brand-lightgrey bg-brand-ivory/60'
-                  }`}
-                >
-                  <p className="text-xs font-bold uppercase tracking-luxury text-brand-black">
-                    Online via Razorpay
-                  </p>
-                  <p className="text-[11px] text-brand-stone mt-0.5">
-                    UPI, Cards, Net Banking, Wallets
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedPaymentMode('cod')}
-                  className={`p-3.5 text-left border transition-all ${
-                    selectedPaymentMode === 'cod'
-                      ? 'border-brand-black bg-brand-ivory ring-1 ring-brand-black'
-                      : 'border-brand-lightgrey bg-brand-ivory/60'
-                  }`}
-                >
-                  <p className="text-xs font-bold uppercase tracking-luxury text-brand-black">
-                    Cash On Delivery (COD)
-                  </p>
-                  <p className="text-[11px] text-brand-stone mt-0.5">
-                    Pay upon doorstep courier handover
-                  </p>
-                </button>
-              </div>
-
-              {selectedPaymentMode === 'razorpay' && (
-                <div className="p-4 bg-brand-ivory border border-brand-lightgrey space-y-3 animate-fade-in">
-                  <span className="text-[11px] uppercase tracking-wider text-brand-stone font-semibold block">
-                    Supported Modes via Razorpay:
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRazorpayMethod('upi')}
-                      className={`p-2.5 border text-center text-xs flex flex-col items-center gap-1 transition-colors ${
-                        razorpayMethod === 'upi'
-                          ? 'border-brand-black bg-brand-offwhite font-bold'
-                          : 'border-brand-lightgrey text-brand-stone hover:text-brand-black'
-                      }`}
-                    >
-                      <Smartphone className="w-4 h-4 text-brand-gold" />
-                      <span>Instant UPI</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRazorpayMethod('card')}
-                      className={`p-2.5 border text-center text-xs flex flex-col items-center gap-1 transition-colors ${
-                        razorpayMethod === 'card'
-                          ? 'border-brand-black bg-brand-offwhite font-bold'
-                          : 'border-brand-lightgrey text-brand-stone hover:text-brand-black'
-                      }`}
-                    >
-                      <CreditCard className="w-4 h-4 text-brand-gold" />
-                      <span>Debit/Credit</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRazorpayMethod('netbanking')}
-                      className={`p-2.5 border text-center text-xs flex flex-col items-center gap-1 transition-colors ${
-                        razorpayMethod === 'netbanking'
-                          ? 'border-brand-black bg-brand-offwhite font-bold'
-                          : 'border-brand-lightgrey text-brand-stone hover:text-brand-black'
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4 text-brand-gold" />
-                      <span>Net Banking</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="p-3.5 text-left border border-brand-black bg-brand-ivory ring-1 ring-brand-black">
+              <p className="text-xs font-bold uppercase tracking-luxury text-brand-black">
+                Online via Razorpay
+              </p>
+              <p className="text-[11px] text-brand-stone mt-0.5">
+                UPI, Cards, Net Banking, Wallets
+              </p>
             </div>
 
-            {/* Place Order CTA Button */}
+            <div className="p-4 bg-brand-ivory border border-brand-lightgrey space-y-3">
+              <span className="text-[11px] uppercase tracking-wider text-brand-stone font-semibold block">
+                Preferred Payment Mode
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRazorpayMethod('upi')}
+                  className={`p-2.5 border text-center text-xs flex flex-col items-center gap-1 transition-colors ${
+                    razorpayMethod === 'upi'
+                      ? 'border-brand-black bg-brand-offwhite font-bold'
+                      : 'border-brand-lightgrey text-brand-stone hover:text-brand-black'
+                  }`}
+                >
+                  <Smartphone className="w-4 h-4 text-brand-gold" />
+                  <span>Instant UPI</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRazorpayMethod('card')}
+                  className={`p-2.5 border text-center text-xs flex flex-col items-center gap-1 transition-colors ${
+                    razorpayMethod === 'card'
+                      ? 'border-brand-black bg-brand-offwhite font-bold'
+                      : 'border-brand-lightgrey text-brand-stone hover:text-brand-black'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 text-brand-gold" />
+                  <span>Debit/Credit</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRazorpayMethod('netbanking')}
+                  className={`p-2.5 border text-center text-xs flex flex-col items-center gap-1 transition-colors ${
+                    razorpayMethod === 'netbanking'
+                      ? 'border-brand-black bg-brand-offwhite font-bold'
+                      : 'border-brand-lightgrey text-brand-stone hover:text-brand-black'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 text-brand-gold" />
+                  <span>Net Banking</span>
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isProcessing}
@@ -485,18 +514,19 @@ export const CheckoutPage: React.FC = () => {
 
             <p className="text-center text-[10px] text-brand-stone flex items-center justify-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-brand-gold" />
-              <span>256-Bit SSL Encrypted & Confidential Checkout</span>
+              <span>256-Bit SSL Encrypted &amp; Confidential Checkout</span>
             </p>
           </div>
         </form>
 
-        {/* Right Column: Order Summary (Sticky) */}
+        {/* Order summary */}
         <div className="lg:col-span-5 bg-brand-offwhite p-6 sm:p-8 border border-brand-lightgrey space-y-6 shadow-sm lg:sticky lg:top-28">
           <div className="flex items-center justify-between pb-3 border-b border-brand-lightgrey">
             <h3 className="text-xs font-bold uppercase tracking-luxury text-brand-black">
               Order Summary ({cart.reduce((t, i) => t + i.quantity, 0)} Items)
             </h3>
             <button
+              type="button"
               onClick={() => navigateTo('shop')}
               className="text-[11px] text-brand-stone hover:text-brand-black underline"
             >
@@ -504,10 +534,12 @@ export const CheckoutPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Line Items List */}
           <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
             {cart.map((item) => (
-              <div key={item.id} className="flex gap-3 text-xs pb-3 border-b border-brand-lightgrey/60">
+              <div
+                key={item.id}
+                className="flex gap-3 text-xs pb-3 border-b border-brand-lightgrey/60"
+              >
                 <img
                   src={item.product.images[0]}
                   alt={item.product.name}
@@ -529,7 +561,6 @@ export const CheckoutPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Financial Breakdown */}
           <div className="space-y-2 text-xs border-t border-brand-lightgrey pt-4">
             <div className="flex justify-between text-brand-charcoal">
               <span>Bag Subtotal</span>
@@ -547,7 +578,9 @@ export const CheckoutPage: React.FC = () => {
               <span>Shipping Fee</span>
               <span>
                 {effectiveShipping === 0 ? (
-                  <span className="text-emerald-700 font-semibold uppercase text-[11px]">Free</span>
+                  <span className="text-emerald-700 font-semibold uppercase text-[11px]">
+                    Free
+                  </span>
                 ) : (
                   `${BRAND.currency.symbol}${effectiveShipping}`
                 )}
@@ -558,13 +591,16 @@ export const CheckoutPage: React.FC = () => {
               <span>Grand Total</span>
               <span>{BRAND.currency.symbol}{grandTotal.toLocaleString('en-IN')}</span>
             </div>
-            <p className="text-[10px] text-brand-stone">Inclusive of GST and all applicable local duties.</p>
+            <p className="text-[10px] text-brand-stone">
+              Inclusive of GST and all applicable local duties.
+            </p>
           </div>
 
-          {/* Guarantee Badges */}
           <div className="p-3 bg-brand-ivory border border-brand-lightgrey text-[11px] text-brand-stone space-y-1">
             <p className="font-semibold text-brand-black">✦ NARVEKA Client Promise</p>
-            <p>Every piece arrives in signature dustproof garment wrapping with individual batch seal.</p>
+            <p>
+              Every piece arrives in signature dustproof garment wrapping with individual batch seal.
+            </p>
           </div>
         </div>
       </div>
