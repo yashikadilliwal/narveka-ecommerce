@@ -158,30 +158,205 @@ def create_order(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def verify_payment(request):
-    order=Order.objects.filter(id=request.data.get("orderId"),user=request.user).first()
-    if not order: return Response({"detail":"Order not found."},404)
-    if order.payment_method!="razorpay": return Response({"detail":"Not a Razorpay order."},400)
-    payload={k:request.data.get(k,"") for k in ("razorpay_order_id","razorpay_payment_id","razorpay_signature")}
-    if payload["razorpay_order_id"]!=order.razorpay_order_id: return Response({"detail":"Order mismatch."},400)
-    expected=hmac.new(settings.RAZORPAY_KEY_SECRET.encode(),f'{payload["razorpay_order_id"]}|{payload["razorpay_payment_id"]}'.encode(),hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected,payload["razorpay_signature"]): return Response({"detail":"Payment signature verification failed."},400)
+    order = Order.objects.filter(
+        id=request.data.get("orderId"),
+        user=request.user,
+    ).first()
+
+    if not order:
+        return Response({"detail": "Order not found."}, status=404)
+
+    if order.payment_method != "razorpay":
+        return Response({"detail": "Not a Razorpay order."}, status=400)
+
+    payload = {
+        key: request.data.get(key, "")
+        for key in (
+            "razorpay_order_id",
+            "razorpay_payment_id",
+            "razorpay_signature",
+        )
+    }
+
+    if payload["razorpay_order_id"] != order.razorpay_order_id:
+        return Response({"detail": "Order mismatch."}, status=400)
+
+    expected = hmac.new(
+        settings.RAZORPAY_KEY_SECRET.encode(),
+        (
+            f'{payload["razorpay_order_id"]}|'
+            f'{payload["razorpay_payment_id"]}'
+        ).encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, payload["razorpay_signature"]):
+        return Response(
+            {"detail": "Payment signature verification failed."},
+            status=400,
+        )
+
     with transaction.atomic():
-        locked=Order.objects.select_for_update().prefetch_related("items__product").get(pk=order.pk)
-        if locked.payment_status!="paid":
-            for line in locked.items.all():
-                v=ProductVariant.objects.select_for_update().filter(product=locked.items.get(pk=line.pk).product,size=line.size,color_name=line.color_name).first()
-                if not v or v.stock<line.quantity: return Response({"detail":f"Stock changed for {line.product_name}. Contact support."},409)
-            for line in locked.items.all():
-                v=ProductVariant.objects.select_for_update().get(product=line.product,size=line.size,color_name=line.color_name)
-                v.stock-=line.quantity; v.save(update_fields=["stock"])
-            locked.payment_status="paid"; locked.order_status="confirmed"; locked.razorpay_payment_id=payload["razorpay_payment_id"]; locked.save()
-    return Response({"success":True,"orderNumber":order.order_number})
+        locked = Order.objects.select_for_update().get(pk=order.pk)
+
+        # Never automatically confirm a cancelled order.
+        if locked.order_status == "cancelled":
+            return Response(
+                {
+                    "detail": (
+                        "This order was cancelled. If your payment was captured, "
+                        "please contact support to arrange a refund."
+                    )
+                },
+                status=409,
+            )
+
+        if locked.payment_status == "paid":
+            return Response({
+                "success": True,
+                "orderNumber": locked.order_number,
+            })
+
+        items = list(
+            OrderItem.objects.filter(order=locked).select_related("product")
+        )
+        variants = []
+
+        for item in items:
+            variant = ProductVariant.objects.select_for_update().filter(
+                product=item.product,
+                size=item.size,
+                color_name=item.color_name,
+            ).first()
+
+            if not variant or variant.stock < item.quantity:
+                return Response(
+                    {
+                        "detail": (
+                            f"Stock changed for {item.product_name}. "
+                            "Please contact support."
+                        )
+                    },
+                    status=409,
+                )
+
+            variants.append((variant, item.quantity))
+
+        for variant, quantity in variants:
+            variant.stock -= quantity
+            variant.save(update_fields=["stock"])
+
+        locked.payment_status = "paid"
+        locked.order_status = "confirmed"
+        locked.razorpay_payment_id = payload["razorpay_payment_id"]
+        locked.save(
+            update_fields=[
+                "payment_status",
+                "order_status",
+                "razorpay_payment_id",
+                "updated_at",
+            ]
+        )
+
+    return Response({
+        "success": True,
+        "orderNumber": order.order_number,
+    })
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def my_orders(request):
     qs=Order.objects.filter(user=request.user).prefetch_related("items__product__images")
     return Response(OrderSerializer(qs,many=True,context={"request":request}).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def cancel_order(request, order_number):
+    with transaction.atomic():
+        order = (
+            Order.objects.select_for_update()
+            .filter(order_number=order_number, user=request.user)
+            .first()
+        )
+
+        if not order:
+            return Response({"detail": "Order not found."}, status=404)
+
+        if order.order_status == "cancelled":
+            return Response({"detail": "This order is already cancelled."}, status=400)
+
+        if order.order_status in ("shipped", "delivered"):
+            return Response(
+                {"detail": "This order can no longer be cancelled online."},
+                status=409,
+            )
+
+        # Paid Razorpay orders require a real refund workflow.
+        if order.payment_method == "razorpay" and order.payment_status == "paid":
+            return Response(
+                {
+                    "detail": (
+                        "This order has already been paid. Please contact support "
+                        "to request cancellation and a refund."
+                    )
+                },
+                status=409,
+            )
+
+        if order.payment_method == "razorpay" and order.payment_status not in (
+            "created",
+            "failed",
+        ):
+            return Response(
+                {"detail": "This payment needs to be checked before cancellation."},
+                status=409,
+            )
+
+        # COD stock was reserved during checkout, so restore it once.
+        if order.payment_method == "cod":
+            items = list(order.items.select_related("product").all())
+            variants = []
+
+            for item in items:
+                variant = ProductVariant.objects.select_for_update().filter(
+                    product=item.product,
+                    size=item.size,
+                    color_name=item.color_name,
+                ).first()
+
+                if not variant:
+                    return Response(
+                        {
+                            "detail": (
+                                f"Could not find the stock variant for "
+                                f"{item.product_name}. Please contact support."
+                            )
+                        },
+                        status=409,
+                    )
+
+                variants.append((variant, item.quantity))
+
+            for variant, quantity in variants:
+                variant.stock += quantity
+                variant.save(update_fields=["stock"])
+
+        order.order_status = "cancelled"
+
+        # A cancelled unpaid Razorpay order has not been paid.
+        if order.payment_method == "razorpay":
+            order.payment_status = "failed"
+
+        order.save(update_fields=["order_status", "payment_status", "updated_at"])
+
+    return Response({
+        "success": True,
+        "orderNumber": order.order_number,
+        "orderStatus": order.order_status,
+        "paymentStatus": order.payment_status,
+    })
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -193,31 +368,109 @@ def create_review(request,slug):
 
 @csrf_exempt
 def razorpay_webhook(request):
-    if request.method!="POST": return HttpResponse(status=405)
-    if not settings.RAZORPAY_WEBHOOK_SECRET: return HttpResponse(status=503)
-    signature=request.headers.get("X-Razorpay-Signature","")
-    expected=hmac.new(settings.RAZORPAY_WEBHOOK_SECRET.encode(),request.body,hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected,signature): return HttpResponse(status=400)
-    try: payload=json.loads(request.body)
-    except: return HttpResponse(status=400)
-    event=payload.get("event","")
-    if event=="payment.captured":
-        payment=payload.get("payload",{}).get("payment",{}).get("entity",{})
-        rp_order=payment.get("order_id")
-        order=Order.objects.filter(razorpay_order_id=rp_order).first()
-        if order and order.payment_status!="paid":
-            with transaction.atomic():
-                locked=Order.objects.select_for_update().prefetch_related("items").get(pk=order.pk)
-                for line in locked.items.all():
-                    v=ProductVariant.objects.select_for_update().filter(product=line.product,size=line.size,color_name=line.color_name).first()
-                    if not v or v.stock < line.quantity:
-                        locked.payment_status="paid"
-                        locked.order_status="pending"
-                        locked.razorpay_payment_id=payment.get("id","")
-                        locked.save()
-                        return HttpResponse(status=200)
-                for line in locked.items.all():
-                    v=ProductVariant.objects.select_for_update().get(product=line.product,size=line.size,color_name=line.color_name)
-                    v.stock-=line.quantity; v.save(update_fields=["stock"])
-                locked.payment_status="paid"; locked.order_status="confirmed"; locked.razorpay_payment_id=payment.get("id",""); locked.save()
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    if not settings.RAZORPAY_WEBHOOK_SECRET:
+        return HttpResponse(status=503)
+
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    expected = hmac.new(
+        settings.RAZORPAY_WEBHOOK_SECRET.encode(),
+        request.body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, signature):
+        return HttpResponse(status=400)
+
+    try:
+        payload = json.loads(request.body)
+    except (ValueError, TypeError):
+        return HttpResponse(status=400)
+
+    if payload.get("event") != "payment.captured":
+        return HttpResponse(status=200)
+
+    payment = (
+        payload.get("payload", {})
+        .get("payment", {})
+        .get("entity", {})
+    )
+    razorpay_order_id = payment.get("order_id")
+    payment_id = payment.get("id")
+
+    if not razorpay_order_id or not payment_id:
+        return HttpResponse(status=400)
+
+    with transaction.atomic():
+        order = (
+            Order.objects.select_for_update()
+            .filter(razorpay_order_id=razorpay_order_id)
+            .first()
+        )
+
+        if not order:
+            return HttpResponse(status=200)
+
+        # Idempotency: don't deduct stock twice for a payment already recorded.
+        if order.payment_status == "paid":
+            return HttpResponse(status=200)
+
+        # A captured payment for a cancelled order needs manual refund handling.
+        if order.order_status == "cancelled":
+            order.payment_status = "paid"
+            order.razorpay_payment_id = payment_id
+            order.save(
+                update_fields=[
+                    "payment_status",
+                    "razorpay_payment_id",
+                    "updated_at",
+                ]
+            )
+            return HttpResponse(status=200)
+
+        items = list(
+            OrderItem.objects.filter(order=order).select_related("product")
+        )
+        variants = []
+
+        for item in items:
+            variant = ProductVariant.objects.select_for_update().filter(
+                product=item.product,
+                size=item.size,
+                color_name=item.color_name,
+            ).first()
+
+            if not variant or variant.stock < item.quantity:
+                # Payment was captured, but stock needs manual resolution.
+                order.payment_status = "paid"
+                order.razorpay_payment_id = payment_id
+                order.save(
+                    update_fields=[
+                        "payment_status",
+                        "razorpay_payment_id",
+                        "updated_at",
+                    ]
+                )
+                return HttpResponse(status=200)
+
+            variants.append((variant, item.quantity))
+
+        for variant, quantity in variants:
+            variant.stock -= quantity
+            variant.save(update_fields=["stock"])
+
+        order.payment_status = "paid"
+        order.order_status = "confirmed"
+        order.razorpay_payment_id = payment_id
+        order.save(
+            update_fields=[
+                "payment_status",
+                "order_status",
+                "razorpay_payment_id",
+                "updated_at",
+            ]
+        )
+
     return HttpResponse(status=200)

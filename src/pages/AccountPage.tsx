@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -15,6 +16,7 @@ import {
   Clock,
   Trash2,
   ArrowRight,
+  XCircle,
 } from 'lucide-react';
 import { ProductCard } from '../components/shop/ProductCard';
 
@@ -32,6 +34,7 @@ export const AccountPage: React.FC = () => {
     setDefaultAddress,
     activeTrackingOrder,
     setActiveTrackingOrder,
+    cancelOrder,
   } = useAuth();
 
   const { wishlistProducts } = useWishlist();
@@ -40,14 +43,12 @@ export const AccountPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'orders' | 'tracking' | 'addresses' | 'wishlist'>('orders');
 
-  // Login form state
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginName, setLoginName] = useState('');
   const [loginPhone, setLoginPhone] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // New Address form modal state
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const [newFullName, setNewFullName] = useState('');
   const [newPhone, setNewPhone] = useState('');
@@ -58,15 +59,22 @@ export const AccountPage: React.FC = () => {
   const [newPincode, setNewPincode] = useState('');
   const [newIsDefault, setNewIsDefault] = useState(false);
 
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
   const handleLoginFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!loginEmail || !loginEmail.includes('@') || !loginPassword) {
       showToast('Please enter a valid email and password.', 'error');
       return;
     }
+
     try {
       if (isRegisterMode) {
-        if (!loginName.trim()) { showToast('Please enter your name.', 'error'); return; }
+        if (!loginName.trim()) {
+          showToast('Please enter your name.', 'error');
+          return;
+        }
         await register(loginName, loginEmail, loginPassword, loginPhone);
       } else {
         await login(loginEmail, loginPassword);
@@ -76,35 +84,65 @@ export const AccountPage: React.FC = () => {
     }
   };
 
-  const handleSaveAddress = (e: React.FormEvent) => {
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!newFullName || !newAddressLine1 || !newCity || !newPincode) {
       showToast('Please fill all required address fields.', 'error');
       return;
     }
 
-    addAddress({
-      fullName: newFullName,
-      email: user?.email || '',
-      phone: newPhone || user?.phone || '',
-      addressLine1: newAddressLine1,
-      addressLine2: newAddressLine2,
-      city: newCity,
-      state: newState || 'Karnataka',
-      pincode: newPincode,
-      isDefault: newIsDefault,
-    });
+    try {
+      await addAddress({
+        fullName: newFullName,
+        email: user?.email || '',
+        phone: newPhone || user?.phone || '',
+        addressLine1: newAddressLine1,
+        addressLine2: newAddressLine2,
+        city: newCity,
+        state: newState || 'Karnataka',
+        pincode: newPincode,
+        isDefault: newIsDefault,
+      });
 
-    setIsAddAddressOpen(false);
-    // Reset fields
-    setNewFullName('');
-    setNewAddressLine1('');
-    setNewAddressLine2('');
-    setNewCity('');
-    setNewPincode('');
+      setIsAddAddressOpen(false);
+      setNewFullName('');
+      setNewPhone('');
+      setNewAddressLine1('');
+      setNewAddressLine2('');
+      setNewCity('');
+      setNewState('');
+      setNewPincode('');
+      setNewIsDefault(false);
+      showToast('Address saved successfully.', 'success');
+    } catch (err) {
+      showToast((err as Error).message || 'Could not save address.', 'error');
+    }
   };
 
-  // If not logged in, render luxury authentication portal
+  const handleCancelOrder = async (orderId: string) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to cancel order ${orderId}?`
+      )
+    ) {
+      return;
+    }
+
+    setCancellingOrderId(orderId);
+
+    try {
+      await cancelOrder(orderId);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Unable to cancel this order.',
+        'error'
+      );
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
   if (!isLoggedIn || !user) {
     return (
       <div className="max-w-md mx-auto px-4 py-16 sm:py-24">
@@ -207,12 +245,10 @@ export const AccountPage: React.FC = () => {
     );
   }
 
-  // Tracking order: either selected active or latest order
   const currentTrackOrder = activeTrackingOrder || orders[0];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-      {/* Account Header */}
       <div className="bg-brand-charcoal text-brand-ivory p-6 sm:p-10 border border-brand-charcoal shadow-card flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-brand-black border border-brand-gold/40 flex items-center justify-center text-brand-gold font-bold text-lg">
@@ -227,7 +263,9 @@ export const AccountPage: React.FC = () => {
                 Atelier Member
               </span>
             </div>
-            <p className="text-xs text-brand-stone mt-0.5">{user.email} • {user.phone}</p>
+            <p className="text-xs text-brand-stone mt-0.5">
+              {user.email} • {user.phone}
+            </p>
           </div>
         </div>
 
@@ -240,7 +278,6 @@ export const AccountPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tabs Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 border-b border-brand-lightgrey">
         <button
           onClick={() => setActiveTab('orders')}
@@ -291,7 +328,7 @@ export const AccountPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab 1: Orders List */}
+      {/* My Orders */}
       {activeTab === 'orders' && (
         <div className="space-y-6">
           {orders.length === 0 ? (
@@ -311,82 +348,112 @@ export const AccountPage: React.FC = () => {
               </button>
             </div>
           ) : (
-            orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-brand-offwhite border border-brand-lightgrey p-6 space-y-4 shadow-sm"
-              >
-                {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-brand-lightgrey gap-3">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold uppercase tracking-luxury text-brand-black">
-                        Order #{order.id}
-                      </span>
-                      <span className="px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        {order.orderStatus}
-                      </span>
+            orders.map((order) => {
+              const status = String(order.orderStatus).toLowerCase();
+              const canCancel = ['pending', 'confirmed', 'processing'].includes(status);
+
+              return (
+                <div
+                  key={order.id}
+                  className="bg-brand-offwhite border border-brand-lightgrey p-6 space-y-4 shadow-sm"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-brand-lightgrey gap-3">
+                    <div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-xs font-bold uppercase tracking-luxury text-brand-black">
+                          Order #{order.id}
+                        </span>
+                        <span className="px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          {order.orderStatus}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-brand-stone mt-0.5">
+                        Placed on {order.date} • Courier Airway Bill:{' '}
+                        <span className="font-mono text-brand-black">
+                          {order.trackingNumber || 'Not assigned yet'}
+                        </span>
+                      </p>
                     </div>
-                    <p className="text-[11px] text-brand-stone mt-0.5">
-                      Placed on {order.date} • Courier Airway Bill: <span className="font-mono text-brand-black">{order.trackingNumber}</span>
-                    </p>
+
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                      <button
+                        onClick={() => {
+                          setActiveTrackingOrder(order);
+                          setActiveTab('tracking');
+                        }}
+                        className="px-4 py-1.5 bg-brand-ivory border border-brand-black text-brand-black hover:bg-brand-black hover:text-brand-ivory text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                      >
+                        <Truck className="w-3.5 h-3.5 text-brand-gold" />
+                        <span>Track Package</span>
+                      </button>
+
+                      {canCancel && (
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={cancellingOrderId === order.id}
+                          className="px-4 py-1.5 bg-brand-ivory border border-red-300 text-red-700 hover:bg-red-50 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>
+                            {cancellingOrderId === order.id
+                              ? 'Cancelling…'
+                              : 'Cancel Order'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setActiveTrackingOrder(order);
-                      setActiveTab('tracking');
-                    }}
-                    className="px-4 py-1.5 bg-brand-ivory border border-brand-black text-brand-black hover:bg-brand-black hover:text-brand-ivory text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 self-start sm:self-auto"
-                  >
-                    <Truck className="w-3.5 h-3.5 text-brand-gold" />
-                    <span>Track Package</span>
-                  </button>
-                </div>
-
-                {/* Items in order */}
-                <div className="space-y-3">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-xs gap-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
-                          className="w-12 h-14 object-cover border border-brand-lightgrey"
-                        />
-                        <div>
-                          <p className="font-semibold text-brand-black uppercase tracking-wide">
-                            {item.product.name}
-                          </p>
-                          <p className="text-[11px] text-brand-stone">
-                            Size: {item.selectedSize} • Color: {item.selectedColor.name} • Qty: {item.quantity}
-                          </p>
+                  <div className="space-y-3">
+                    {order.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between text-xs gap-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={item.product.images?.[0] || ''}
+                            alt={item.product.name}
+                            className="w-12 h-14 object-cover border border-brand-lightgrey"
+                          />
+                          <div>
+                            <p className="font-semibold text-brand-black uppercase tracking-wide">
+                              {item.product.name}
+                            </p>
+                            <p className="text-[11px] text-brand-stone">
+                              Size: {item.selectedSize} • Color:{' '}
+                              {item.selectedColor.name} • Qty: {item.quantity}
+                            </p>
+                          </div>
                         </div>
+                        <span className="font-semibold text-brand-black">
+                          {BRAND.currency.symbol}
+                          {(item.product.price * item.quantity).toLocaleString('en-IN')}
+                        </span>
                       </div>
-                      <span className="font-semibold text-brand-black">
-                        {BRAND.currency.symbol}
-                        {(item.product.price * item.quantity).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                {/* Total & Delivery Address */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-brand-lightgrey text-xs text-brand-stone gap-2">
-                  <p>
-                    Delivery Destination: <strong className="text-brand-black">{order.shippingAddress.city}, {order.shippingAddress.state}</strong>
-                  </p>
-                  <p className="text-sm font-bold text-brand-black">
-                    Total: {BRAND.currency.symbol}{order.total.toLocaleString('en-IN')}
-                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-brand-lightgrey text-xs text-brand-stone gap-2">
+                    <p>
+                      Delivery Destination:{' '}
+                      <strong className="text-brand-black">
+                        {order.shippingAddress.city}, {order.shippingAddress.state}
+                      </strong>
+                    </p>
+                    <p className="text-sm font-bold text-brand-black">
+                      Total: {BRAND.currency.symbol}
+                      {order.total.toLocaleString('en-IN')}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
 
-      {/* Tab 2: Live Tracking Timeline */}
+      {/* Live Tracking */}
       {activeTab === 'tracking' && (
         <div className="bg-brand-offwhite border border-brand-lightgrey p-6 sm:p-10 space-y-8">
           {currentTrackOrder ? (
@@ -400,19 +467,22 @@ export const AccountPage: React.FC = () => {
                     Order #{currentTrackOrder.id}
                   </h3>
                   <p className="text-xs text-brand-stone mt-1">
-                    Airway Bill No: <strong className="font-mono text-brand-black">{currentTrackOrder.trackingNumber}</strong> • Partner: Bluedart Express Air
+                    Airway Bill No:{' '}
+                    <strong className="font-mono text-brand-black">
+                      {currentTrackOrder.trackingNumber || 'Not assigned yet'}
+                    </strong>
                   </p>
                 </div>
 
                 <div className="p-3 bg-brand-ivory border border-brand-lightgrey text-xs">
                   <p className="text-brand-stone">Expected Handover:</p>
-                  <p className="font-bold text-brand-black text-sm">{currentTrackOrder.estimatedDelivery}</p>
+                  <p className="font-bold text-brand-black text-sm">
+                    {currentTrackOrder.estimatedDelivery || 'To be confirmed'}
+                  </p>
                 </div>
               </div>
 
-              {/* Step Progress Bar */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-                {/* Step 1 */}
                 <div className="flex md:flex-col items-start gap-4 p-4 bg-brand-ivory border border-brand-lightgrey">
                   <div className="w-9 h-9 rounded-full bg-brand-black text-brand-ivory flex items-center justify-center text-xs font-bold shrink-0">
                     <CheckCircle2 className="w-5 h-5 text-brand-gold" />
@@ -422,40 +492,42 @@ export const AccountPage: React.FC = () => {
                       1. Order Confirmed
                     </p>
                     <p className="text-[11px] text-brand-stone">{currentTrackOrder.date}</p>
-                    <p className="text-[10px] text-emerald-700 font-medium">Payment Verified</p>
+                    <p className="text-[10px] text-emerald-700 font-medium">
+                      {currentTrackOrder.paymentStatus === 'paid'
+                        ? 'Payment Verified'
+                        : 'Payment pending'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Step 2 */}
                 <div className="flex md:flex-col items-start gap-4 p-4 bg-brand-ivory border border-brand-gold/60 ring-1 ring-brand-gold/30">
-                  <div className="w-9 h-9 rounded-full bg-brand-gold text-brand-black flex items-center justify-center text-xs font-bold shrink-0 animate-pulse">
+                  <div className="w-9 h-9 rounded-full bg-brand-gold text-brand-black flex items-center justify-center text-xs font-bold shrink-0">
                     <Clock className="w-5 h-5" />
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold uppercase tracking-luxury text-brand-black">
-                      2. Atelier QC & Pack
+                      2. Atelier QC &amp; Pack
                     </p>
-                    <p className="text-[11px] text-brand-stone">In Process</p>
-                    <p className="text-[10px] text-brand-gold font-medium">Dustproof Packing</p>
+                    <p className="text-[11px] text-brand-stone">{currentTrackOrder.orderStatus}</p>
+                    <p className="text-[10px] text-brand-gold font-medium">Packing status</p>
                   </div>
                 </div>
 
-                {/* Step 3 */}
-                <div className="flex md:flex-col items-start gap-4 p-4 bg-brand-ivory border border-brand-lightgrey opacity-60">
+                <div className="flex md:flex-col items-start gap-4 p-4 bg-brand-ivory border border-brand-lightgrey">
                   <div className="w-9 h-9 rounded-full bg-brand-lightgrey text-brand-stone flex items-center justify-center text-xs font-bold shrink-0">
                     <Truck className="w-5 h-5" />
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold uppercase tracking-luxury text-brand-charcoal">
-                      3. Express Air Transit
+                      3. Express Transit
                     </p>
-                    <p className="text-[11px] text-brand-stone">Upcoming</p>
-                    <p className="text-[10px] text-brand-stone">Bluedart Priority</p>
+                    <p className="text-[11px] text-brand-stone">
+                      {currentTrackOrder.trackingNumber ? 'Tracking assigned' : 'Awaiting dispatch'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Step 4 */}
-                <div className="flex md:flex-col items-start gap-4 p-4 bg-brand-ivory border border-brand-lightgrey opacity-60">
+                <div className="flex md:flex-col items-start gap-4 p-4 bg-brand-ivory border border-brand-lightgrey">
                   <div className="w-9 h-9 rounded-full bg-brand-lightgrey text-brand-stone flex items-center justify-center text-xs font-bold shrink-0">
                     <MapPin className="w-5 h-5" />
                   </div>
@@ -463,8 +535,12 @@ export const AccountPage: React.FC = () => {
                     <p className="text-xs font-bold uppercase tracking-luxury text-brand-charcoal">
                       4. Doorstep Handover
                     </p>
-                    <p className="text-[11px] text-brand-stone">Upcoming</p>
-                    <p className="text-[10px] text-brand-stone">{currentTrackOrder.shippingAddress.city}</p>
+                    <p className="text-[11px] text-brand-stone">
+                      {currentTrackOrder.orderStatus === 'delivered' ? 'Delivered' : 'Upcoming'}
+                    </p>
+                    <p className="text-[10px] text-brand-stone">
+                      {currentTrackOrder.shippingAddress.city}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -477,7 +553,7 @@ export const AccountPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 3: Saved Addresses */}
+      {/* Saved Addresses */}
       {activeTab === 'addresses' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center pb-3 border-b border-brand-lightgrey">
@@ -536,7 +612,6 @@ export const AccountPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Add Address Modal */}
           {isAddAddressOpen && (
             <div className="fixed inset-0 z-50 overflow-y-auto">
               <div
@@ -676,7 +751,7 @@ export const AccountPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 4: Wishlist */}
+      {/* Wishlist */}
       {activeTab === 'wishlist' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center pb-3 border-b border-brand-lightgrey">
