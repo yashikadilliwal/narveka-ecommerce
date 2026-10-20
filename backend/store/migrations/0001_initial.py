@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
                 ('discount', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
                 ('shipping_fee', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
                 ('total', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('payment_method', models.CharField(choices=[('razorpay', 'Razorpay'), ('cod', 'Cash on Delivery')], max_length=20)),
+                ('payment_method', models.CharField(choices=[('razorpay', 'Razorpay')], max_length=20)),
                 ('payment_status', models.CharField(choices=[('created', 'Created'), ('paid', 'Paid'), ('failed', 'Failed'), ('cod_pending', 'COD Pending'), ('refunded', 'Refunded')], default='created', max_length=20)),
                 ('order_status', models.CharField(choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('processing', 'Processing'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
                 ('coupon_code', models.CharField(blank=True, max_length=40)),

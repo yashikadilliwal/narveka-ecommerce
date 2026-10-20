@@ -95,65 +95,192 @@ def validate_coupon(request):
 
 def _make_order_number(): return f"NRV-{uuid.uuid4().hex[:10].upper()}"
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_order(request):
-    data=request.data
-    items=data.get("items",[])
-    if not items: return Response({"detail":"Cart is empty."},400)
-    shipping=data.get("shippingAddress") or {}
-    required=["fullName","email","phone","addressLine1","city","state","pincode"]
-    if any(not str(shipping.get(k,"")).strip() for k in required):
-        return Response({"detail":"Complete shipping details are required."},400)
-    payment_method=data.get("paymentMethod","razorpay")
-    shipping_method=data.get("shippingMethod","standard")
-    if payment_method not in ("razorpay","cod"): return Response({"detail":"Unsupported payment method."},400)
-    coupon_code=(data.get("couponCode") or "").strip().upper()
+    data = request.data
+    items = data.get("items", [])
+
+    if not items:
+        return Response({"detail": "Cart is empty."}, status=400)
+
+    # Reject COD and every other unsupported payment method.
+    payment_method = data.get("paymentMethod", "razorpay")
+    if payment_method != "razorpay":
+        return Response(
+            {"detail": "Only online payment through Razorpay is available."},
+            status=400,
+        )
+
+    if not settings.RAZORPAY_KEY_ID or not settings.RAZORPAY_KEY_SECRET:
+        return Response(
+            {"detail": "Razorpay is not configured. Please try again later."},
+            status=503,
+        )
+
+    shipping = data.get("shippingAddress") or {}
+    required = [
+        "fullName", "email", "phone", "addressLine1",
+        "city", "state", "pincode",
+    ]
+
+    if any(not str(shipping.get(key, "")).strip() for key in required):
+        return Response(
+            {"detail": "Complete shipping details are required."},
+            status=400,
+        )
+
+    shipping_method = data.get("shippingMethod", "standard")
+    if shipping_method not in ("standard", "priority"):
+        return Response({"detail": "Invalid shipping method."}, status=400)
+
+    coupon_code = (data.get("couponCode") or "").strip().upper()
+
     with transaction.atomic():
-        subtotal=Decimal("0")
-        order_lines=[]
+        subtotal = Decimal("0")
+        order_lines = []
+        c = None
+
         for item in items:
-            p=Product.objects.filter(slug=item.get("productId"),active=True).prefetch_related("variants").first()
-            if not p: return Response({"detail":"A product in your cart is unavailable."},409)
-            size=str(item.get("size","")); color=str(item.get("colorName",""))
-            variant=ProductVariant.objects.select_for_update().filter(product=p,size=size,color_name=color).first()
-            qty=int(item.get("quantity",0))
-            if not variant or qty<1 or variant.stock<qty:
-                return Response({"detail":f"Insufficient stock for {p.name} ({size}/{color})."},409)
-            subtotal += p.price*qty
-            order_lines.append((p,variant,qty))
-        discount=Decimal("0")
+            p = (
+                Product.objects.filter(
+                    slug=item.get("productId"),
+                    active=True,
+                )
+                .prefetch_related("variants")
+                .first()
+            )
+
+            if not p:
+                return Response(
+                    {"detail": "A product in your cart is unavailable."},
+                    status=409,
+                )
+
+            size = str(item.get("size", ""))
+            color = str(item.get("colorName", ""))
+
+            variant = ProductVariant.objects.select_for_update().filter(
+                product=p,
+                size=size,
+                color_name=color,
+            ).first()
+
+            try:
+                qty = int(item.get("quantity", 0))
+            except (TypeError, ValueError):
+                qty = 0
+
+            if not variant or qty < 1 or variant.stock < qty:
+                return Response(
+                    {"detail": f"Insufficient stock for {p.name} ({size}/{color})."},
+                    status=409,
+                )
+
+            subtotal += p.price * qty
+            order_lines.append((p, variant, qty))
+
+        discount = Decimal("0")
+
         if coupon_code:
-            c=Coupon.objects.select_for_update().filter(code=coupon_code,active=True).first()
+            c = Coupon.objects.select_for_update().filter(
+                code=coupon_code,
+                active=True,
+            ).first()
+
             if c:
-                discount=Decimal(str(c.calculate(subtotal)))
-        shipping_fee = Decimal("0") if subtotal >= Decimal("2499") else Decimal("199")
-        if shipping_method == "priority": shipping_fee += Decimal("150")
-        total=max(Decimal("0"),subtotal-discount+shipping_fee)
-        order=Order.objects.create(
-            user=request.user,order_number=_make_order_number(),subtotal=subtotal,discount=discount,
-            shipping_fee=shipping_fee,total=total,payment_method=payment_method,
-            payment_status="cod_pending" if payment_method=="cod" else "created",
-            order_status="confirmed" if payment_method=="cod" else "pending",coupon_code=coupon_code,
-            shipping_name=shipping["fullName"],shipping_email=shipping["email"],shipping_phone=shipping["phone"],
-            address_line1=shipping["addressLine1"],address_line2=shipping.get("addressLine2",""),
-            city=shipping["city"],state=shipping["state"],pincode=shipping["pincode"])
-        for p,v,qty in order_lines:
-            OrderItem.objects.create(order=order,product=p,product_name=p.name,unit_price=p.price,size=v.size,color_name=v.color_name,color_hex=v.color_hex,quantity=qty)
+                if subtotal < c.minimum_spend:
+                    return Response(
+                        {"detail": f"Minimum cart value is ₹{c.minimum_spend}."},
+                        status=400,
+                    )
+                discount = Decimal(str(c.calculate(subtotal)))
+
+        shipping_fee = (
+            Decimal("0")
+            if subtotal >= Decimal("2499")
+            else Decimal("199")
+        )
+
+        if shipping_method == "priority":
+            shipping_fee += Decimal("150")
+
+        total = max(Decimal("0"), subtotal - discount + shipping_fee)
+
+        order = Order.objects.create(
+            user=request.user,
+            order_number=_make_order_number(),
+            subtotal=subtotal,
+            discount=discount,
+            shipping_fee=shipping_fee,
+            total=total,
+            payment_method="razorpay",
+            payment_status="created",
+            order_status="pending",
+            coupon_code=coupon_code,
+            shipping_name=shipping["fullName"],
+            shipping_email=shipping["email"],
+            shipping_phone=shipping["phone"],
+            address_line1=shipping["addressLine1"],
+            address_line2=shipping.get("addressLine2", ""),
+            city=shipping["city"],
+            state=shipping["state"],
+            pincode=shipping["pincode"],
+        )
+
+        for p, v, qty in order_lines:
+            OrderItem.objects.create(
+                order=order,
+                product=p,
+                product_name=p.name,
+                unit_price=p.price,
+                size=v.size,
+                color_name=v.color_name,
+                color_hex=v.color_hex,
+                quantity=qty,
+            )
+
         if coupon_code and c:
             c.used_count += 1
             c.save(update_fields=["used_count"])
-        if payment_method=="cod":
-            for _,v,qty in order_lines:
-                v.stock-=qty; v.save(update_fields=["stock"])
-        else:
-            if not settings.RAZORPAY_KEY_ID or not settings.RAZORPAY_KEY_SECRET:
-                order.delete()
-                return Response({"detail":"Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to backend/.env."},503)
-            client=razorpay.Client(auth=(settings.RAZORPAY_KEY_ID,settings.RAZORPAY_KEY_SECRET))
-            rp=client.order.create({"amount":int(total*100),"currency":"INR","receipt":order.order_number,"notes":{"order_number":order.order_number}})
-            order.razorpay_order_id=rp["id"]; order.save(update_fields=["razorpay_order_id"])
-    return Response({"orderId":order.id,"orderNumber":order.order_number,"amount":str(order.total),"currency":"INR","razorpayOrderId":order.razorpay_order_id,"razorpayKeyId":settings.RAZORPAY_KEY_ID,"paymentMethod":payment_method},201)
+
+        client = razorpay.Client(
+            auth=(
+                settings.RAZORPAY_KEY_ID,
+                settings.RAZORPAY_KEY_SECRET,
+            )
+        )
+
+        try:
+            rp = client.order.create({
+                "amount": int(total * 100),
+                "currency": "INR",
+                "receipt": order.order_number,
+                "notes": {"order_number": order.order_number},
+            })
+        except Exception:
+            # Roll back the order and related items if Razorpay creation fails.
+            raise
+
+        order.razorpay_order_id = rp["id"]
+        order.save(update_fields=["razorpay_order_id"])
+
+    return Response(
+        {
+            "orderId": order.id,
+            "orderNumber": order.order_number,
+            "amount": str(order.total),
+            "currency": "INR",
+            "razorpayOrderId": order.razorpay_order_id,
+            "razorpayKeyId": settings.RAZORPAY_KEY_ID,
+            "paymentMethod": "razorpay",
+        },
+        status=201,
+    )
+
+
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
