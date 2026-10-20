@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category,Product,ProductImage,ProductVariant,Review,Address,WishlistItem,Coupon,Order,OrderItem,SiteSetting,CustomerProfile
+from .models import Category,Product,ProductImage,ProductVariant,Review,Address,WishlistItem,Coupon,Order,OrderItem,SiteSetting,CustomerProfile, messages
 
 class ProductImageInline(admin.TabularInline):
     model=ProductImage
@@ -14,12 +14,71 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields=("name","slug")
     prepopulated_fields={"slug":("name",)}
     inlines=[ProductImageInline,ProductVariantInline]
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display=("order_number","user","total","payment_status","order_status","created_at","tracking_number")
-    list_filter=("payment_status","order_status","payment_method")
-    search_fields=("order_number","user__email","tracking_number")
-    readonly_fields=("order_number","razorpay_order_id","razorpay_payment_id","created_at","updated_at")
+    list_display = (
+        "order_number",
+        "user",
+        "total",
+        "payment_status",
+        "order_status",
+        "created_at",
+        "tracking_number",
+    )
+
+    list_filter = ("payment_status", "order_status", "payment_method")
+    search_fields = ("order_number", "user__email", "tracking_number")
+
+    readonly_fields = (
+        "order_number",
+        "razorpay_order_id",
+        "razorpay_payment_id",
+        "created_at",
+        "updated_at",
+    )
+
+    actions = ["cancel_unpaid_orders"]
+
+    @admin.action(description="Cancel selected unpaid orders")
+    def cancel_unpaid_orders(self, request, queryset):
+        cancelled = 0
+        skipped = 0
+
+        for order in queryset:
+            # Only cancel orders that have not been paid.
+            if (
+                order.payment_status in ("created", "failed")
+                and order.order_status not in (
+                    "shipped",
+                    "delivered",
+                    "cancelled",
+                )
+            ):
+                order.order_status = "cancelled"
+                order.save(update_fields=["order_status", "updated_at"])
+                cancelled += 1
+            else:
+                # Paid orders need a confirmed refund process.
+                # COD orders may already have reduced stock.
+                skipped += 1
+
+        if cancelled:
+            self.message_user(
+                request,
+                f"{cancelled} unpaid order(s) cancelled.",
+                level=messages.SUCCESS,
+            )
+
+        if skipped:
+            self.message_user(
+                request,
+                f"{skipped} order(s) skipped. Check payment status, "
+                "stock, and shipping before cancelling.",
+                level=messages.WARNING,
+            )
+            
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display=("name","slug","active","sort_order")
