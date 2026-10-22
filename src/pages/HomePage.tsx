@@ -268,7 +268,7 @@ export const HomePage: React.FC = () => {
                 <Shield className="w-6 h-6 stroke-[1.5]" />
               </div>
               <h3 className="text-sm font-semibold uppercase tracking-luxury text-brand-black">
-                Made For Everyday
+                Made For Everyday  
               </h3>
               <p className="text-xs text-brand-stone leading-relaxed">
                 Built with reinforced double-needle seams and non-bacon collar ribs so your garments look as sharp on day 200 as on day 1.

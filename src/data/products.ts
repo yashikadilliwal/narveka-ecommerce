@@ -382,33 +382,33 @@ export const LOOKBOOK_GALLERY = [
   {
     id: 'lb-1',
     image:
-      'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1000&auto=format&fit=crop',
-    title: 'Autumn Atelier Vol. 1',
-    subtitle: 'Onyx Boxy Silhouette & Relaxed Tailoring',
-    tag: '@narvekaclothing',
+      'https://res.cloudinary.com/njdstqqc/image/upload/v1792667401/IMG_6155.png',
+    title: 'Narveka Atelier',
+    subtitle: 'Redefining tradition through mordern form',
+    tag: '@narvekaofficial',
   },
   {
     id: 'lb-2',
     image:
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop',
-    title: 'Monochrome Study',
-    subtitle: '450 GSM French Terry Drape',
+      'https://res.cloudinary.com/njdstqqc/image/upload/v1792667390/IMG_6157.png',
+    title: 'After Dark',
+    subtitle: 'Where silence meets streetwear',
     tag: '#narvekaminimal',
   },
   {
     id: 'lb-3',
     image:
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop',
-    title: 'Architectural Ease',
-    subtitle: 'Dropped Shoulders & Crisp Linens',
-    tag: '@narvekaclothing',
+      'https://res.cloudinary.com/njdstqqc/image/upload/v1792667401/IMG_6156.png',
+    title: 'Distorted Elegance',
+    subtitle: 'where Art meets mordern Streetwear',
+    tag: '@narvekaofficial',
   },
   {
     id: 'lb-4',
     image:
-      'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=1000&auto=format&fit=crop',
-    title: 'Modern Everyday',
-    subtitle: 'Tone-on-tone Minimal Uniform',
+      'https://res.cloudinary.com/njdstqqc/image/upload/v1792667390/IMG_6154.png',
+    title: 'Eclips Theory',
+    subtitle: 'quiet Luxury, Unappologetic expression',
     tag: '#ModernMinimalYou',
   },
 ];
