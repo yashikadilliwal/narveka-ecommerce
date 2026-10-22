@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -6,7 +7,6 @@ import React, {
 } from 'react';
 
 import type { Product } from '../types';
-import { INITIAL_PRODUCTS } from '../data/products';
 import { api } from '../api';
 
 interface ApiProductImage {
@@ -34,32 +34,25 @@ const ProductContext =
 export const ProductProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [products, setProducts] =
-    useState<Product[]>(INITIAL_PRODUCTS);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      
+    try {
       const data = await api<ApiProduct[]>('/products/');
 
-      const formattedProducts: Product[] =
-        data.map((product) => ({
+      const formattedProducts: Product[] = data.map(
+        (product) => ({
           ...product,
-
-          // Django sends image objects.
-          // Frontend Product type expects string URLs.
-          images: product.images
+          images: [...product.images]
             .sort(
-              (a, b) =>
-                a.sort_order - b.sort_order
+              (a, b) => a.sort_order - b.sort_order
             )
             .map((image) => image.url),
-        }));
+        })
+      );
 
       setProducts(formattedProducts);
 
@@ -68,12 +61,12 @@ export const ProductProvider: React.FC<{
         formattedProducts
       );
     } catch (error) {
-      console.warn(
-        'NARVEKA API unavailable; using local catalogue.',
+      console.error(
+        'Failed to load NARVEKA products from Render:',
         error
       );
 
-      setProducts(INITIAL_PRODUCTS);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -85,11 +78,7 @@ export const ProductProvider: React.FC<{
 
   return (
     <ProductContext.Provider
-      value={{
-        products,
-        loading,
-        refresh,
-      }}
+      value={{ products, loading, refresh }}
     >
       {children}
     </ProductContext.Provider>
@@ -97,8 +86,7 @@ export const ProductProvider: React.FC<{
 };
 
 export const useProducts = () => {
-  const context =
-    useContext(ProductContext);
+  const context = useContext(ProductContext);
 
   if (!context) {
     throw new Error(
