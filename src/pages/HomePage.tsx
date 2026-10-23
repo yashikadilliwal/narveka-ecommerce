@@ -296,7 +296,7 @@ export const HomePage: React.FC = () => {
             className="mt-3 sm:mt-0 text-xs uppercase tracking-wide-editorial font-semibold text-brand-charcoal hover:text-brand-gold flex items-center gap-1.5 transition-colors self-start sm:self-auto"
           >
             <InstagramIcon className="w-3.5 h-3.5 text-brand-gold" />
-            <span>Follow @narvekaclothing</span>
+            <span>Follow @narvekaofficial</span>
           </a>
         </div>
 
