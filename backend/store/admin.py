@@ -9,8 +9,8 @@ class ProductVariantInline(admin.TabularInline):
     extra=1
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display=("name","category","price","active","is_new","is_best_seller","updated_at")
-    list_filter=("category","active","is_new","is_best_seller")
+    list_display=("name","category","price","active","is_new","is_best_seller","is_made_to_order","updated_at")
+    list_filter=("category","active","is_new","is_best_seller","is_made_to_order")
     search_fields=("name","slug")
     prepopulated_fields={"slug":("name",)}
     inlines=[ProductImageInline,ProductVariantInline]
