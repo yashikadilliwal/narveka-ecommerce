@@ -35,6 +35,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Exaggerated Oversized / Boxy Fit',
     isNew: true,
     isBestSeller: true,
+    isMadeToOrder: true,
     rating: 4.9,
     reviewsCount: 48,
     stock: {
@@ -105,6 +106,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Relaxed Dropped Silhouette',
     isNew: true,
     isBestSeller: true,
+    isMadeToOrder: true,
     rating: 5.0,
     reviewsCount: 39,
     stock: {
@@ -150,6 +152,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Oversized Contemporary Tailoring',
     isNew: false,
     isBestSeller: true,
+    isMadeToOrder: true,
     rating: 4.8,
     reviewsCount: 27,
     stock: {
@@ -191,6 +194,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Wide Boxy Fit',
     isNew: true,
     isBestSeller: false,
+    isMadeToOrder: true,  
     rating: 4.9,
     reviewsCount: 22,
     stock: {
@@ -233,6 +237,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Modern Relaxed Fit',
     isNew: true,
     isBestSeller: true,
+    isMadeToOrder: true,
     rating: 4.9,
     reviewsCount: 31,
     stock: {
@@ -274,6 +279,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Wide-Leg Tailored Dropped Rise',
     isNew: false,
     isBestSeller: true,
+    isMadeToOrder: true,
     rating: 4.7,
     reviewsCount: 19,
     stock: {
@@ -315,6 +321,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Relaxed Boxy Fit',
     isNew: true,
     isBestSeller: false,
+    isMadeToOrder: true,
     rating: 4.8,
     reviewsCount: 15,
     stock: {
@@ -357,6 +364,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     fit: 'Modern Longline Drape',
     isNew: false,
     isBestSeller: true,
+    isMadeToOrder: true,
     rating: 4.9,
     reviewsCount: 34,
     stock: {

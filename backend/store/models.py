@@ -29,6 +29,7 @@ class Product(models.Model):
     fit=models.CharField(max_length=160,blank=True)
     is_new=models.BooleanField(default=False)
     is_best_seller=models.BooleanField(default=False)
+    is_made_to_order=models.BooleanField(default=False)
     active=models.BooleanField(default=True)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)

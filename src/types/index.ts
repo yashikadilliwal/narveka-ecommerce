@@ -42,6 +42,7 @@ export interface Product {
   fit: string;
   isNew?: boolean;
   isBestSeller?: boolean;
+  isMadeToOrder?: boolean;
   rating: number;
   reviewsCount: number;
   stock: Record<string, number>;
