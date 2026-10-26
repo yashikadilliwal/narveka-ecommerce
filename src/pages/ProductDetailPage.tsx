@@ -195,7 +195,7 @@ export const ProductDetailPage: React.FC = () => {
 
             {product.isMadeToOrder === true && (
               <span className="absolute top-12 left-4 bg-brand-black text-brand-gold text-[10px] font-semibold uppercase tracking-luxury px-3 py-1 border border-brand-gold/40">
-                Made to Order
+                Made on Order
               </span>
             )}
 
@@ -281,10 +281,10 @@ export const ProductDetailPage: React.FC = () => {
             {product.isMadeToOrder === true && (
               <div className="mt-4 border border-brand-gold/40 bg-brand-offwhite p-3">
                 <p className="text-xs font-semibold uppercase tracking-luxury text-brand-black">
-                  Made to Order
+                  Made on Order
                 </p>
                 <p className="text-xs text-brand-stone leading-relaxed mt-1">
-                  This piece is made to order and requires additional preparation
+                  This piece is made on order and requires additional preparation
                   time before dispatch. Delivery may take longer than standard
                   products.
                 </p>
@@ -432,7 +432,7 @@ export const ProductDetailPage: React.FC = () => {
               <Truck className="w-4 h-4 text-brand-gold shrink-0" />
               <span>
                 {product.isMadeToOrder
-                  ? 'Made to Order — Extended Delivery Time'
+                  ? 'Made on Order — Extended Delivery Time'
                   : 'Free Express Delivery (3–5 Days)'}
               </span>
             </div>
@@ -499,7 +499,7 @@ export const ProductDetailPage: React.FC = () => {
                   {product.isMadeToOrder ? (
                     <>
                       <p>
-                        • This piece is made to order and requires additional
+                        • This piece is made on order and requires additional
                         preparation time before dispatch.
                       </p>
                       <p>

@@ -137,7 +137,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {product.isMadeToOrder && (
             <span className="bg-brand-black text-brand-gold text-[9px] font-semibold uppercase tracking-luxury px-2 py-0.5 border border-brand-gold/40">
-              Made to Order
+              Made on Order
             </span>
           )}
 
