@@ -6,7 +6,6 @@ import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 import type { ProductColor, Review } from '../types';
 import { BRAND } from '../config/brand';
-
 import { ProductCard } from '../components/shop/ProductCard';
 import { useProducts } from '../context/ProductContext';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export const ProductDetailPage: React.FC = () => {
-  const { selectedProduct, setIsSizeGuideOpen, navigateTo } = useNavigation();
+  const { selectedProduct, setIsSizeGuideOpen, navigateTo } =
+    useNavigation();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { showToast } = useToast();
@@ -42,11 +42,10 @@ export const ProductDetailPage: React.FC = () => {
     product.colors[0]
   );
   const [quantity, setQuantity] = useState(1);
+  const [openAccordion, setOpenAccordion] = useState<string | null>(
+    'details'
+  );
 
-  // Accordion states
-  const [openAccordion, setOpenAccordion] = useState<string | null>('details');
-
-  // Customer Reviews State
   const [reviewsList, setReviewsList] = useState<Review[]>(
     product.reviews || [
       {
@@ -70,8 +69,8 @@ export const ProductDetailPage: React.FC = () => {
   const [newReviewComment, setNewReviewComment] = useState('');
 
   const inWishlist = isInWishlist(product.id);
+  const isMadeOnOrder = product.isMadeToOrder === true;
 
-  // Related products (excluding current)
   const relatedProducts = products
     .filter(
       (p) =>
@@ -109,7 +108,7 @@ export const ProductDetailPage: React.FC = () => {
       return;
     }
 
-    if (!newReviewComment) {
+    if (!newReviewComment.trim()) {
       showToast('Please provide your review remarks.', 'error');
       return;
     }
@@ -139,8 +138,9 @@ export const ProductDetailPage: React.FC = () => {
         sizePurchased: selectedSize,
       };
 
-      setReviewsList([newRev, ...reviewsList]);
+      setReviewsList((previous) => [newRev, ...previous]);
       setIsReviewFormOpen(false);
+      setNewReviewAuthor('');
       setNewReviewComment('');
       setNewReviewTitle('');
 
@@ -175,11 +175,10 @@ export const ProductDetailPage: React.FC = () => {
         </span>
       </nav>
 
-      {/* Main PDP Grid */}
+      {/* Main Product Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-        {/* Left: Product Image Gallery */}
+        {/* Product Image Gallery */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Main Display Image */}
           <div className="relative aspect-[3/4] bg-brand-offwhite border border-brand-lightgrey overflow-hidden shadow-card">
             <img
               src={product.images[activeImageIndex] || product.images[0]}
@@ -193,7 +192,7 @@ export const ProductDetailPage: React.FC = () => {
               </span>
             )}
 
-            {product.isMadeToOrder === true && (
+            {isMadeOnOrder && (
               <span className="absolute top-12 left-4 bg-brand-black text-brand-gold text-[10px] font-semibold uppercase tracking-luxury px-3 py-1 border border-brand-gold/40">
                 Made on Order
               </span>
@@ -208,7 +207,6 @@ export const ProductDetailPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Thumbnail Strip */}
           {product.images.length > 1 && (
             <div className="grid grid-cols-4 gap-3">
               {product.images.map((img, idx) => (
@@ -221,16 +219,19 @@ export const ProductDetailPage: React.FC = () => {
                       : 'border-brand-lightgrey opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Right: Product Purchase Controls */}
+        {/* Product Purchase Controls */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-28">
-          {/* Header Info */}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs uppercase tracking-luxury font-semibold text-brand-gold">
@@ -246,7 +247,6 @@ export const ProductDetailPage: React.FC = () => {
               {product.name}
             </h1>
 
-            {/* Price & Badges */}
             <div className="flex items-center gap-4 mt-3">
               <span className="text-xl font-bold text-brand-black">
                 {BRAND.currency.symbol}
@@ -259,7 +259,6 @@ export const ProductDetailPage: React.FC = () => {
                     {BRAND.currency.symbol}
                     {product.originalPrice.toLocaleString('en-IN')}
                   </span>
-
                   <span className="text-xs text-brand-gold font-semibold uppercase tracking-wider">
                     Save{' '}
                     {Math.round(
@@ -277,22 +276,24 @@ export const ProductDetailPage: React.FC = () => {
               Price inclusive of all taxes. Free shipping on this piece.
             </p>
 
-            {/* Made-to-order delivery notice */}
-            {product.isMadeToOrder === true && (
+            {isMadeOnOrder && (
               <div className="mt-4 border border-brand-gold/40 bg-brand-offwhite p-3">
                 <p className="text-xs font-semibold uppercase tracking-luxury text-brand-black">
                   Made on Order
                 </p>
                 <p className="text-xs text-brand-stone leading-relaxed mt-1">
-                  This piece is made on order and requires additional preparation
-                  time before dispatch. Delivery may take longer than standard
-                  products.
+                  This piece is made on order and requires additional
+                  preparation time before dispatch. Delivery may take
+                  longer than standard products.
+                </p>
+                <p className="text-xs font-semibold text-brand-black leading-relaxed mt-2">
+                  Made on Order products are not eligible for returns or
+                  exchanges.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Description */}
           <p className="text-xs sm:text-sm text-brand-charcoal leading-relaxed">
             {product.description}
           </p>
@@ -360,7 +361,6 @@ export const ProductDetailPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Low stock indicator */}
             {remainingStock < 6 && (
               <p className="text-[11px] text-amber-700 flex items-center gap-1 font-medium pt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
@@ -370,10 +370,9 @@ export const ProductDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Quantity & CTAs */}
+          {/* Quantity and Buttons */}
           <div className="space-y-3 pt-4 border-t border-brand-lightgrey">
             <div className="flex items-center gap-3">
-              {/* Quantity Stepper */}
               <div className="flex items-center border border-brand-lightgrey bg-brand-offwhite">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -381,11 +380,9 @@ export const ProductDetailPage: React.FC = () => {
                 >
                   -
                 </button>
-
                 <span className="px-3 py-3 text-xs font-semibold text-brand-black min-w-[2rem] text-center">
                   {quantity}
                 </span>
-
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
                   className="px-3.5 py-3 text-xs text-brand-charcoal hover:bg-brand-lightgrey/50 transition-colors"
@@ -394,7 +391,6 @@ export const ProductDetailPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Add to Bag Primary Button */}
               <button
                 onClick={handleAddToCart}
                 className="flex-1 bg-brand-black text-brand-ivory hover:bg-brand-charcoal hover:text-brand-gold py-3.5 px-6 text-xs font-semibold uppercase tracking-luxury transition-all flex items-center justify-center gap-2 border border-brand-black shadow-card"
@@ -403,7 +399,6 @@ export const ProductDetailPage: React.FC = () => {
                 <span>Add To Bag</span>
               </button>
 
-              {/* Wishlist Button */}
               <button
                 onClick={() => toggleWishlist(product.id)}
                 className="p-3.5 border border-brand-lightgrey bg-brand-offwhite hover:border-brand-gold transition-colors text-brand-charcoal"
@@ -417,7 +412,6 @@ export const ProductDetailPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Direct Buy Now Button */}
             <button
               onClick={handleBuyNow}
               className="w-full bg-brand-ivory text-brand-black hover:bg-brand-gold hover:text-brand-black py-3.5 px-4 text-xs font-semibold uppercase tracking-luxury transition-all border border-brand-black"
@@ -426,12 +420,12 @@ export const ProductDetailPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Atelier Perks Summary */}
+          {/* Shipping and Returns Summary */}
           <div className="grid grid-cols-2 gap-3 py-3 text-[11px] text-brand-stone border-y border-brand-lightgrey">
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-brand-gold shrink-0" />
               <span>
-                {product.isMadeToOrder
+                {isMadeOnOrder
                   ? 'Made on Order — Extended Delivery Time'
                   : 'Free Express Delivery (3–5 Days)'}
               </span>
@@ -439,13 +433,17 @@ export const ProductDetailPage: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-brand-gold shrink-0" />
-              <span>2-Day Doorstep Returns</span>
+              <span>
+                {isMadeOnOrder
+                  ? 'No Returns on Made on Order Products'
+                  : '2-Day Returns'}
+              </span>
             </div>
           </div>
 
-          {/* Expandable Accordions */}
+          {/* Product Information Accordions */}
           <div className="divide-y divide-brand-lightgrey border-b border-brand-lightgrey text-xs">
-            {/* Accordion 1: Details & Materials */}
+            {/* Details and Materials */}
             <div className="py-3">
               <button
                 onClick={() => toggleAccordion('details')}
@@ -470,7 +468,6 @@ export const ProductDetailPage: React.FC = () => {
                   <p>
                     <strong>Fit:</strong> {product.fit}
                   </p>
-
                   <ul className="list-disc list-inside space-y-1 text-brand-stone pt-1">
                     {product.details.map((det, i) => (
                       <li key={i}>{det}</li>
@@ -480,7 +477,7 @@ export const ProductDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Accordion 2: Shipping & Delivery */}
+            {/* Shipping and Delivery */}
             <div className="py-3">
               <button
                 onClick={() => toggleAccordion('shipping')}
@@ -496,7 +493,7 @@ export const ProductDetailPage: React.FC = () => {
 
               {openAccordion === 'shipping' && (
                 <div className="mt-3 space-y-2 text-brand-stone animate-fade-in text-xs leading-relaxed">
-                  {product.isMadeToOrder ? (
+                  {isMadeOnOrder ? (
                     <>
                       <p>
                         • This piece is made on order and requires additional
@@ -530,7 +527,7 @@ export const ProductDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Accordion 3: Return & Exchange */}
+            {/* Returns and Exchanges */}
             <div className="py-3">
               <button
                 onClick={() => toggleAccordion('returns')}
@@ -546,23 +543,41 @@ export const ProductDetailPage: React.FC = () => {
 
               {openAccordion === 'returns' && (
                 <div className="mt-3 space-y-2 text-brand-stone animate-fade-in text-xs leading-relaxed">
-                  <p>
-                    • We offer a 7-day hassle-free return or size exchange
-                    policy from the date of delivery.
-                  </p>
-                  <p>
-                    • Reverse pickup will be arranged right from your doorstep
-                    at zero extra cost.
-                  </p>
-                  <p>
-                    • Garments must be unworn, unwashed with all tags intact in
-                    original luxury pouch.
-                  </p>
+                  {isMadeOnOrder ? (
+                    <>
+                      <p>
+                        • Made on Order products are not eligible for returns
+                        or exchanges.
+                      </p>
+                      <p>
+                        • Please review your selected size, color, and product
+                        details carefully before placing your order.
+                      </p>
+                      <p>
+                        • If your item arrives damaged or incorrect, contact
+                        NARVEKA customer support for assistance.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        • Returns are accepted within 2 days of delivery.
+                      </p>
+                      <p>
+                        • Garments must be unworn and unwashed, with all tags
+                        intact and in their original packaging.
+                      </p>
+                      <p>
+                        • Please contact NARVEKA customer support to initiate
+                        a return.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Accordion 4: Wash & Care */}
+            {/* Wash and Care */}
             <div className="py-3">
               <button
                 onClick={() => toggleAccordion('care')}
@@ -592,7 +607,7 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Customer Reviews Section */}
+      {/* Customer Reviews */}
       <section className="mt-20 pt-14 border-t border-brand-lightgrey">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-brand-lightgrey gap-4">
           <div>
@@ -610,7 +625,6 @@ export const ProductDetailPage: React.FC = () => {
                   <Star key={i} className="w-4 h-4 fill-brand-gold" />
                 ))}
               </div>
-
               <span className="text-xs font-semibold text-brand-black">
                 {product.rating.toFixed(1)} out of 5.0
               </span>
@@ -625,7 +639,7 @@ export const ProductDetailPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Review Submission Form */}
+        {/* Review Form */}
         {isReviewFormOpen && (
           <form
             onSubmit={handleAddReview}
@@ -639,7 +653,6 @@ export const ProductDetailPage: React.FC = () => {
               <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                 Rating
               </label>
-
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -665,7 +678,6 @@ export const ProductDetailPage: React.FC = () => {
                 <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                   Your Name
                 </label>
-
                 <input
                   type="text"
                   required
@@ -680,7 +692,6 @@ export const ProductDetailPage: React.FC = () => {
                 <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                   Review Headline
                 </label>
-
                 <input
                   type="text"
                   value={newReviewTitle}
@@ -695,7 +706,6 @@ export const ProductDetailPage: React.FC = () => {
               <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                 Your Experience & Fit Feedback
               </label>
-
               <textarea
                 required
                 rows={3}
@@ -715,7 +725,7 @@ export const ProductDetailPage: React.FC = () => {
           </form>
         )}
 
-        {/* Reviews Cards */}
+        {/* Review Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {reviewsList.map((rev) => (
             <div
@@ -735,8 +745,9 @@ export const ProductDetailPage: React.FC = () => {
                     </span>
                   )}
                 </div>
-
-                <span className="text-[11px] text-brand-stone">{rev.date}</span>
+                <span className="text-[11px] text-brand-stone">
+                  {rev.date}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -756,7 +767,6 @@ export const ProductDetailPage: React.FC = () => {
               <h5 className="text-xs font-bold uppercase tracking-wide text-brand-black">
                 {rev.title}
               </h5>
-
               <p className="text-xs text-brand-stone leading-relaxed">
                 {rev.comment}
               </p>
@@ -765,14 +775,13 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Related Products / Complete the Look */}
+      {/* Related Products */}
       {relatedProducts.length > 0 && (
         <section className="mt-24 pt-14 border-t border-brand-lightgrey">
           <div className="mb-10 text-center sm:text-left">
             <span className="text-xs uppercase tracking-luxury text-brand-gold font-semibold">
               Curated Uniform
             </span>
-
             <h3 className="editorial-title text-2xl sm:text-3xl font-bold text-brand-black mt-1">
               Complete The Look
             </h3>
