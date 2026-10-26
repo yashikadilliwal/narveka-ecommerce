@@ -439,7 +439,7 @@ export const ProductDetailPage: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-brand-gold shrink-0" />
-              <span>7-Day Doorstep Returns</span>
+              <span>2-Day Doorstep Returns</span>
             </div>
           </div>
 

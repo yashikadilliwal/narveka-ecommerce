@@ -36,6 +36,7 @@ export const BRAND = {
   shipping: {
     standardDays: '3 - 5 Business Days',
     expressDays: '1 - 2 Business Days',
-    returnsDays: '7-Day Hassle-Free Returns',
+    returnsDays: '2-Day Hassle-Free Returns',
+    madeOnOrderReturns: 'No Returns on Made on Order Products',
   }
 };

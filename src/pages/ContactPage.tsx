@@ -85,7 +85,7 @@ export const ContactPage: React.FC = () => {
 
           <div className="p-6 bg-brand-charcoal text-brand-ivory border border-brand-charcoal space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-luxury text-brand-gold">
-              7-Day Doorstep Returns
+              2-Day Doorstep Returns
             </h4>
             <p className="text-xs text-brand-stone leading-relaxed">
               Need a size exchange? Simply write to concierge@narveka.com with your order number. A door-to-door courier swap will be scheduled at your convenience.
