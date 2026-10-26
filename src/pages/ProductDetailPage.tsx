@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigation } from '../context/NavigationContext';
 import { useCart } from '../context/CartContext';
@@ -34,26 +35,33 @@ export const ProductDetailPage: React.FC = () => {
   const product = selectedProduct || products[0];
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string>(product.sizes[1] || product.sizes[0]);
-  const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
+  const [selectedSize, setSelectedSize] = useState<string>(
+    product.sizes[1] || product.sizes[0]
+  );
+  const [selectedColor, setSelectedColor] = useState<ProductColor>(
+    product.colors[0]
+  );
   const [quantity, setQuantity] = useState(1);
 
   // Accordion states
   const [openAccordion, setOpenAccordion] = useState<string | null>('details');
 
   // Customer Reviews State
-  const [reviewsList, setReviewsList] = useState<Review[]>(product.reviews || [
-    {
-      id: 'rev-def-1',
-      author: 'Vikram S.',
-      rating: 5,
-      date: '18 Sept 2026',
-      title: 'Flawless heavyweight drop',
-      comment: 'The 280 GSM weight is unreal. It holds a stiff, architectural boxy drape around the shoulders that looks incredible in photographs and in person.',
-      verified: true,
-      sizePurchased: 'L'
-    }
-  ]);
+  const [reviewsList, setReviewsList] = useState<Review[]>(
+    product.reviews || [
+      {
+        id: 'rev-def-1',
+        author: 'Vikram S.',
+        rating: 5,
+        date: '18 Sept 2026',
+        title: 'Flawless heavyweight drop',
+        comment:
+          'The 280 GSM weight is unreal. It holds a stiff, architectural boxy drape around the shoulders that looks incredible in photographs and in person.',
+        verified: true,
+        sizePurchased: 'L',
+      },
+    ]
+  );
 
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [newReviewAuthor, setNewReviewAuthor] = useState('');
@@ -64,9 +72,13 @@ export const ProductDetailPage: React.FC = () => {
   const inWishlist = isInWishlist(product.id);
 
   // Related products (excluding current)
-  const relatedProducts = products.filter(
-    (p) => p.id !== product.id && (p.category === product.category || p.isBestSeller)
-  ).slice(0, 3);
+  const relatedProducts = products
+    .filter(
+      (p) =>
+        p.id !== product.id &&
+        (p.category === product.category || p.isBestSeller)
+    )
+    .slice(0, 3);
 
   const toggleAccordion = (name: string) => {
     setOpenAccordion(openAccordion === name ? null : name);
@@ -90,21 +102,52 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) { showToast('Please sign in to leave a review.', 'error'); navigateTo('account'); return; }
-    if (!newReviewComment) { showToast('Please provide your review remarks.', 'error'); return; }
+
+    if (!user) {
+      showToast('Please sign in to leave a review.', 'error');
+      navigateTo('account');
+      return;
+    }
+
+    if (!newReviewComment) {
+      showToast('Please provide your review remarks.', 'error');
+      return;
+    }
+
     try {
-      const saved = await api<any>(`/products/${product.slug}/reviews/`, {
-        method:'POST',
-        body:JSON.stringify({rating:newReviewRating,title:newReviewTitle||'NARVEKA Review',comment:newReviewComment})
-      }, true);
+      const saved = await api<any>(
+        `/products/${product.slug}/reviews/`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            rating: newReviewRating,
+            title: newReviewTitle || 'NARVEKA Review',
+            comment: newReviewComment,
+          }),
+        },
+        true
+      );
+
       const newRev: Review = {
-        id:String(saved.id), author:saved.author, rating:saved.rating, date:new Date(saved.date).toLocaleDateString('en-IN'),
-        title:saved.title, comment:saved.comment, verified:saved.verified, sizePurchased:selectedSize
+        id: String(saved.id),
+        author: saved.author,
+        rating: saved.rating,
+        date: new Date(saved.date).toLocaleDateString('en-IN'),
+        title: saved.title,
+        comment: saved.comment,
+        verified: saved.verified,
+        sizePurchased: selectedSize,
       };
-      setReviewsList([newRev,...reviewsList]);
-      setIsReviewFormOpen(false); setNewReviewComment(''); setNewReviewTitle('');
+
+      setReviewsList([newRev, ...reviewsList]);
+      setIsReviewFormOpen(false);
+      setNewReviewComment('');
+      setNewReviewTitle('');
+
       showToast('Thank you for your NARVEKA review.', 'success');
-    } catch(err) { showToast((err as Error).message,'error'); }
+    } catch (err) {
+      showToast((err as Error).message, 'error');
+    }
   };
 
   const remainingStock = product.stock[selectedSize] || 5;
@@ -113,20 +156,28 @@ export const ProductDetailPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
       {/* Breadcrumb Navigation */}
       <nav className="flex items-center space-x-2 text-xs text-brand-stone mb-8 uppercase tracking-luxury">
-        <button onClick={() => navigateTo('home')} className="hover:text-brand-black transition-colors">
+        <button
+          onClick={() => navigateTo('home')}
+          className="hover:text-brand-black transition-colors"
+        >
           Home
         </button>
         <span>/</span>
-        <button onClick={() => navigateTo('shop')} className="hover:text-brand-black transition-colors">
+        <button
+          onClick={() => navigateTo('shop')}
+          className="hover:text-brand-black transition-colors"
+        >
           Shop
         </button>
         <span>/</span>
-        <span className="text-brand-black font-semibold truncate max-w-xs">{product.name}</span>
+        <span className="text-brand-black font-semibold truncate max-w-xs">
+          {product.name}
+        </span>
       </nav>
 
-      {/* Main PDP Grid: dominant photography on left, sticky purchase details on right */}
+      {/* Main PDP Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-        {/* Left: Product Image Gallery (Dominant Photography) */}
+        {/* Left: Product Image Gallery */}
         <div className="lg:col-span-7 space-y-4">
           {/* Main Display Image */}
           <div className="relative aspect-[3/4] bg-brand-offwhite border border-brand-lightgrey overflow-hidden shadow-card">
@@ -135,11 +186,19 @@ export const ProductDetailPage: React.FC = () => {
               alt={product.name}
               className="w-full h-full object-cover object-center transition-all duration-500"
             />
+
             {product.isNew && (
               <span className="absolute top-4 left-4 bg-brand-black text-brand-ivory text-[10px] font-semibold uppercase tracking-luxury px-3 py-1 border border-brand-gold/40">
                 New Drop
               </span>
             )}
+
+            {product.isMadeToOrder === true && (
+              <span className="absolute top-12 left-4 bg-brand-black text-brand-gold text-[10px] font-semibold uppercase tracking-luxury px-3 py-1 border border-brand-gold/40">
+                Made to Order
+              </span>
+            )}
+
             <button
               onClick={handleShare}
               className="absolute top-4 right-4 w-9 h-9 rounded-full bg-brand-ivory/80 backdrop-blur-sm border border-brand-lightgrey flex items-center justify-center text-brand-charcoal hover:text-brand-gold transition-colors"
@@ -193,14 +252,22 @@ export const ProductDetailPage: React.FC = () => {
                 {BRAND.currency.symbol}
                 {product.price.toLocaleString('en-IN')}
               </span>
+
               {product.originalPrice && (
                 <>
                   <span className="text-sm text-brand-stone line-through">
                     {BRAND.currency.symbol}
                     {product.originalPrice.toLocaleString('en-IN')}
                   </span>
+
                   <span className="text-xs text-brand-gold font-semibold uppercase tracking-wider">
-                    Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                    Save{' '}
+                    {Math.round(
+                      ((product.originalPrice - product.price) /
+                        product.originalPrice) *
+                        100
+                    )}
+                    %
                   </span>
                 </>
               )}
@@ -209,6 +276,20 @@ export const ProductDetailPage: React.FC = () => {
             <p className="text-xs text-brand-stone mt-1">
               Price inclusive of all taxes. Free shipping on this piece.
             </p>
+
+            {/* Made-to-order delivery notice */}
+            {product.isMadeToOrder === true && (
+              <div className="mt-4 border border-brand-gold/40 bg-brand-offwhite p-3">
+                <p className="text-xs font-semibold uppercase tracking-luxury text-brand-black">
+                  Made to Order
+                </p>
+                <p className="text-xs text-brand-stone leading-relaxed mt-1">
+                  This piece is made to order and requires additional preparation
+                  time before dispatch. Delivery may take longer than standard
+                  products.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -220,9 +301,13 @@ export const ProductDetailPage: React.FC = () => {
           <div className="space-y-2.5 pt-2 border-t border-brand-lightgrey">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold uppercase tracking-luxury text-brand-black">
-                Color: <span className="font-normal text-brand-stone">{selectedColor.name}</span>
+                Color:{' '}
+                <span className="font-normal text-brand-stone">
+                  {selectedColor.name}
+                </span>
               </span>
             </div>
+
             <div className="flex items-center gap-3">
               {product.colors.map((color) => (
                 <button
@@ -244,8 +329,12 @@ export const ProductDetailPage: React.FC = () => {
           <div className="space-y-2.5 pt-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold uppercase tracking-luxury text-brand-black">
-                Select Size: <span className="font-normal text-brand-stone">{selectedSize}</span>
+                Select Size:{' '}
+                <span className="font-normal text-brand-stone">
+                  {selectedSize}
+                </span>
               </span>
+
               <button
                 onClick={() => setIsSizeGuideOpen(true)}
                 className="text-brand-stone hover:text-brand-gold flex items-center gap-1 underline underline-offset-2"
@@ -275,7 +364,8 @@ export const ProductDetailPage: React.FC = () => {
             {remainingStock < 6 && (
               <p className="text-[11px] text-amber-700 flex items-center gap-1 font-medium pt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
-                Limited batch: Only {remainingStock} units remaining in size {selectedSize}.
+                Limited batch: Only {remainingStock} units remaining in size{' '}
+                {selectedSize}.
               </p>
             )}
           </div>
@@ -291,9 +381,11 @@ export const ProductDetailPage: React.FC = () => {
                 >
                   -
                 </button>
+
                 <span className="px-3 py-3 text-xs font-semibold text-brand-black min-w-[2rem] text-center">
                   {quantity}
                 </span>
+
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
                   className="px-3.5 py-3 text-xs text-brand-charcoal hover:bg-brand-lightgrey/50 transition-colors"
@@ -318,7 +410,9 @@ export const ProductDetailPage: React.FC = () => {
                 title={inWishlist ? 'Remove from Wishlist' : 'Save to Wishlist'}
               >
                 <Heart
-                  className={`w-4 h-4 ${inWishlist ? 'fill-brand-gold text-brand-gold' : ''}`}
+                  className={`w-4 h-4 ${
+                    inWishlist ? 'fill-brand-gold text-brand-gold' : ''
+                  }`}
                 />
               </button>
             </div>
@@ -336,8 +430,13 @@ export const ProductDetailPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-3 py-3 text-[11px] text-brand-stone border-y border-brand-lightgrey">
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-brand-gold shrink-0" />
-              <span>Free Express Delivery (3-5 Days)</span>
+              <span>
+                {product.isMadeToOrder
+                  ? 'Made to Order — Extended Delivery Time'
+                  : 'Free Express Delivery (3–5 Days)'}
+              </span>
             </div>
+
             <div className="flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-brand-gold shrink-0" />
               <span>7-Day Doorstep Returns</span>
@@ -353,13 +452,25 @@ export const ProductDetailPage: React.FC = () => {
                 className="w-full flex items-center justify-between font-semibold uppercase tracking-luxury text-brand-black text-left"
               >
                 <span>Garment Specifications & Fabric</span>
-                {openAccordion === 'details' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {openAccordion === 'details' ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
               </button>
+
               {openAccordion === 'details' && (
                 <div className="mt-3 space-y-2 text-brand-charcoal animate-fade-in text-xs">
-                  <p><strong>Composition:</strong> {product.fabric}</p>
-                  <p><strong>Weight:</strong> {product.gsm}</p>
-                  <p><strong>Fit:</strong> {product.fit}</p>
+                  <p>
+                    <strong>Composition:</strong> {product.fabric}
+                  </p>
+                  <p>
+                    <strong>Weight:</strong> {product.gsm}
+                  </p>
+                  <p>
+                    <strong>Fit:</strong> {product.fit}
+                  </p>
+
                   <ul className="list-disc list-inside space-y-1 text-brand-stone pt-1">
                     {product.details.map((det, i) => (
                       <li key={i}>{det}</li>
@@ -376,13 +487,45 @@ export const ProductDetailPage: React.FC = () => {
                 className="w-full flex items-center justify-between font-semibold uppercase tracking-luxury text-brand-black text-left"
               >
                 <span>Shipping & Express Courier</span>
-                {openAccordion === 'shipping' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {openAccordion === 'shipping' ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
               </button>
+
               {openAccordion === 'shipping' && (
                 <div className="mt-3 space-y-2 text-brand-stone animate-fade-in text-xs leading-relaxed">
-                  <p>• All orders are dispatched via Bluedart / Delhivery Express priority air service.</p>
-                  <p>• Metro deliveries arrive within 48 to 72 hours of dispatch.</p>
-                  <p>• Full live tracking link provided immediately upon dispatch.</p>
+                  {product.isMadeToOrder ? (
+                    <>
+                      <p>
+                        • This piece is made to order and requires additional
+                        preparation time before dispatch.
+                      </p>
+                      <p>
+                        • Delivery will take longer than the standard 3–5 day
+                        estimate.
+                      </p>
+                      <p>
+                        • Full live tracking link provided upon dispatch.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        • All orders are dispatched via Bluedart / Delhivery
+                        Express priority air service.
+                      </p>
+                      <p>
+                        • Metro deliveries arrive within 48 to 72 hours of
+                        dispatch.
+                      </p>
+                      <p>
+                        • Full live tracking link provided immediately upon
+                        dispatch.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -394,13 +537,27 @@ export const ProductDetailPage: React.FC = () => {
                 className="w-full flex items-center justify-between font-semibold uppercase tracking-luxury text-brand-black text-left"
               >
                 <span>Returns & Exchanges</span>
-                {openAccordion === 'returns' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {openAccordion === 'returns' ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
               </button>
+
               {openAccordion === 'returns' && (
                 <div className="mt-3 space-y-2 text-brand-stone animate-fade-in text-xs leading-relaxed">
-                  <p>• We offer a 7-day hassle-free return or size exchange policy from the date of delivery.</p>
-                  <p>• Reverse pickup will be arranged right from your doorstep at zero extra cost.</p>
-                  <p>• Garments must be unworn, unwashed with all tags intact in original luxury pouch.</p>
+                  <p>
+                    • We offer a 7-day hassle-free return or size exchange
+                    policy from the date of delivery.
+                  </p>
+                  <p>
+                    • Reverse pickup will be arranged right from your doorstep
+                    at zero extra cost.
+                  </p>
+                  <p>
+                    • Garments must be unworn, unwashed with all tags intact in
+                    original luxury pouch.
+                  </p>
                 </div>
               )}
             </div>
@@ -412,13 +569,21 @@ export const ProductDetailPage: React.FC = () => {
                 className="w-full flex items-center justify-between font-semibold uppercase tracking-luxury text-brand-black text-left"
               >
                 <span>Wash & Care Guide</span>
-                {openAccordion === 'care' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {openAccordion === 'care' ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
               </button>
+
               {openAccordion === 'care' && (
                 <div className="mt-3 space-y-1.5 text-brand-stone animate-fade-in text-xs leading-relaxed">
                   <p>• Cold machine wash (30°C) with similar darks.</p>
                   <p>• Wash inside out to preserve surface hand-feel.</p>
-                  <p>• Do not tumble dry. Line dry in shade to maintain architectural drape.</p>
+                  <p>
+                    • Do not tumble dry. Line dry in shade to maintain
+                    architectural drape.
+                  </p>
                   <p>• Warm iron inside out if needed.</p>
                 </div>
               )}
@@ -434,15 +599,18 @@ export const ProductDetailPage: React.FC = () => {
             <span className="text-xs uppercase tracking-luxury text-brand-gold font-semibold">
               Atelier Client Feedback
             </span>
+
             <h3 className="editorial-title text-2xl font-bold text-brand-black mt-1">
               Verified Reviews ({reviewsList.length})
             </h3>
+
             <div className="flex items-center gap-2 mt-2">
               <div className="flex text-brand-gold">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-brand-gold" />
                 ))}
               </div>
+
               <span className="text-xs font-semibold text-brand-black">
                 {product.rating.toFixed(1)} out of 5.0
               </span>
@@ -457,7 +625,7 @@ export const ProductDetailPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Review Submission Form Modal / Drawer */}
+        {/* Review Submission Form */}
         {isReviewFormOpen && (
           <form
             onSubmit={handleAddReview}
@@ -471,6 +639,7 @@ export const ProductDetailPage: React.FC = () => {
               <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                 Rating
               </label>
+
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -481,7 +650,9 @@ export const ProductDetailPage: React.FC = () => {
                   >
                     <Star
                       className={`w-5 h-5 ${
-                        star <= newReviewRating ? 'fill-brand-gold text-brand-gold' : 'text-brand-stone'
+                        star <= newReviewRating
+                          ? 'fill-brand-gold text-brand-gold'
+                          : 'text-brand-stone'
                       }`}
                     />
                   </button>
@@ -494,6 +665,7 @@ export const ProductDetailPage: React.FC = () => {
                 <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                   Your Name
                 </label>
+
                 <input
                   type="text"
                   required
@@ -508,6 +680,7 @@ export const ProductDetailPage: React.FC = () => {
                 <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                   Review Headline
                 </label>
+
                 <input
                   type="text"
                   value={newReviewTitle}
@@ -522,6 +695,7 @@ export const ProductDetailPage: React.FC = () => {
               <label className="text-xs uppercase tracking-wider text-brand-charcoal font-medium">
                 Your Experience & Fit Feedback
               </label>
+
               <textarea
                 required
                 rows={3}
@@ -550,7 +724,10 @@ export const ProductDetailPage: React.FC = () => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-brand-black">{rev.author}</span>
+                  <span className="text-xs font-bold text-brand-black">
+                    {rev.author}
+                  </span>
+
                   {rev.verified && (
                     <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-medium">
                       <CheckCircle className="w-3 h-3" />
@@ -558,6 +735,7 @@ export const ProductDetailPage: React.FC = () => {
                     </span>
                   )}
                 </div>
+
                 <span className="text-[11px] text-brand-stone">{rev.date}</span>
               </div>
 
@@ -567,6 +745,7 @@ export const ProductDetailPage: React.FC = () => {
                     <Star key={i} className="w-3.5 h-3.5 fill-brand-gold" />
                   ))}
                 </div>
+
                 {rev.sizePurchased && (
                   <span className="text-[10px] text-brand-stone uppercase">
                     Purchased Size {rev.sizePurchased}
@@ -577,7 +756,10 @@ export const ProductDetailPage: React.FC = () => {
               <h5 className="text-xs font-bold uppercase tracking-wide text-brand-black">
                 {rev.title}
               </h5>
-              <p className="text-xs text-brand-stone leading-relaxed">{rev.comment}</p>
+
+              <p className="text-xs text-brand-stone leading-relaxed">
+                {rev.comment}
+              </p>
             </div>
           ))}
         </div>
@@ -590,10 +772,12 @@ export const ProductDetailPage: React.FC = () => {
             <span className="text-xs uppercase tracking-luxury text-brand-gold font-semibold">
               Curated Uniform
             </span>
+
             <h3 className="editorial-title text-2xl sm:text-3xl font-bold text-brand-black mt-1">
               Complete The Look
             </h3>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {relatedProducts.map((p) => (
               <ProductCard key={p.id} product={p} />
