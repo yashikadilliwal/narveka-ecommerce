@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 import type { Product } from '../../types';
@@ -47,7 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   /*
    * IMPORTANT:
    *
-   * product.images is now string[]
+   * product.images is string[]
    *
    * Therefore we use:
    *
@@ -133,6 +134,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Badges */}
 
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+
+          {product.isMadeToOrder && (
+            <span className="bg-brand-black text-brand-gold text-[9px] font-semibold uppercase tracking-luxury px-2 py-0.5 border border-brand-gold/40">
+              Made to Order
+            </span>
+          )}
 
           {product.isNew && (
             <span className="bg-brand-black text-brand-ivory text-[9px] font-semibold uppercase tracking-luxury px-2 py-0.5 border border-brand-gold/40">
