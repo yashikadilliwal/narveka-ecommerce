@@ -36,9 +36,9 @@ export const CheckoutPage: React.FC = () => {
   const [phone, setPhone] = useState(defaultAddr?.phone || user?.phone || '');
   const [addressLine1, setAddressLine1] = useState(defaultAddr?.addressLine1 || '');
   const [addressLine2, setAddressLine2] = useState(defaultAddr?.addressLine2 || '');
-  const [city, setCity] = useState(defaultAddr?.city || 'Bengaluru');
-  const [state, setState] = useState(defaultAddr?.state || 'Karnataka');
-  const [pincode, setPincode] = useState(defaultAddr?.pincode || '560038');
+  const [city, setCity] = useState(defaultAddr?.city || '');
+  const [state, setState] = useState(defaultAddr?.state || '');
+  const [pincode, setPincode] = useState(defaultAddr?.pincode || '');
 
   // Shipping method
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'priority'>('standard');

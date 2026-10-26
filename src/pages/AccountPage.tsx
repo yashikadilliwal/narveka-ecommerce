@@ -41,7 +41,9 @@ export const AccountPage: React.FC = () => {
   const { navigateTo } = useNavigation();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'tracking' | 'addresses' | 'wishlist'>('orders');
+  const [activeTab, setActiveTab] = useState<
+    'orders' | 'tracking' | 'addresses' | 'wishlist'
+  >('orders');
 
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
@@ -59,7 +61,9 @@ export const AccountPage: React.FC = () => {
   const [newPincode, setNewPincode] = useState('');
   const [newIsDefault, setNewIsDefault] = useState(false);
 
-  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
+    null
+  );
 
   const handleLoginFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +79,7 @@ export const AccountPage: React.FC = () => {
           showToast('Please enter your name.', 'error');
           return;
         }
+
         await register(loginName, loginEmail, loginPassword, loginPhone);
       } else {
         await login(loginEmail, loginPassword);
@@ -87,21 +92,28 @@ export const AccountPage: React.FC = () => {
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newFullName || !newAddressLine1 || !newCity || !newPincode) {
+    if (
+      !newFullName.trim() ||
+      !newPhone.trim() ||
+      !newAddressLine1.trim() ||
+      !newCity.trim() ||
+      !newState.trim() ||
+      !newPincode.trim()
+    ) {
       showToast('Please fill all required address fields.', 'error');
       return;
     }
 
     try {
       await addAddress({
-        fullName: newFullName,
+        fullName: newFullName.trim(),
         email: user?.email || '',
-        phone: newPhone || user?.phone || '',
-        addressLine1: newAddressLine1,
-        addressLine2: newAddressLine2,
-        city: newCity,
-        state: newState || 'Karnataka',
-        pincode: newPincode,
+        phone: newPhone.trim(),
+        addressLine1: newAddressLine1.trim(),
+        addressLine2: newAddressLine2.trim(),
+        city: newCity.trim(),
+        state: newState.trim(),
+        pincode: newPincode.trim(),
         isDefault: newIsDefault,
       });
 
@@ -114,6 +126,7 @@ export const AccountPage: React.FC = () => {
       setNewState('');
       setNewPincode('');
       setNewIsDefault(false);
+
       showToast('Address saved successfully.', 'success');
     } catch (err) {
       showToast((err as Error).message || 'Could not save address.', 'error');
@@ -122,9 +135,7 @@ export const AccountPage: React.FC = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     if (
-      !window.confirm(
-        `Are you sure you want to cancel order ${orderId}?`
-      )
+      !window.confirm(`Are you sure you want to cancel order ${orderId}?`)
     ) {
       return;
     }
@@ -232,6 +243,7 @@ export const AccountPage: React.FC = () => {
 
           <div className="text-center pt-2">
             <button
+              type="button"
               onClick={() => setIsRegisterMode(!isRegisterMode)}
               className="text-xs text-brand-stone hover:text-brand-black underline underline-offset-2"
             >
@@ -350,7 +362,11 @@ export const AccountPage: React.FC = () => {
           ) : (
             orders.map((order) => {
               const status = String(order.orderStatus).toLowerCase();
-              const canCancel = ['pending', 'confirmed', 'processing'].includes(status);
+              const canCancel = [
+                'pending',
+                'confirmed',
+                'processing',
+              ].includes(status);
 
               return (
                 <div
@@ -428,7 +444,9 @@ export const AccountPage: React.FC = () => {
                         </div>
                         <span className="font-semibold text-brand-black">
                           {BRAND.currency.symbol}
-                          {(item.product.price * item.quantity).toLocaleString('en-IN')}
+                          {(item.product.price * item.quantity).toLocaleString(
+                            'en-IN'
+                          )}
                         </span>
                       </div>
                     ))}
@@ -438,7 +456,8 @@ export const AccountPage: React.FC = () => {
                     <p>
                       Delivery Destination:{' '}
                       <strong className="text-brand-black">
-                        {order.shippingAddress.city}, {order.shippingAddress.state}
+                        {order.shippingAddress.city},{' '}
+                        {order.shippingAddress.state}
                       </strong>
                     </p>
                     <p className="text-sm font-bold text-brand-black">
@@ -491,7 +510,9 @@ export const AccountPage: React.FC = () => {
                     <p className="text-xs font-bold uppercase tracking-luxury text-brand-black">
                       1. Order Confirmed
                     </p>
-                    <p className="text-[11px] text-brand-stone">{currentTrackOrder.date}</p>
+                    <p className="text-[11px] text-brand-stone">
+                      {currentTrackOrder.date}
+                    </p>
                     <p className="text-[10px] text-emerald-700 font-medium">
                       {currentTrackOrder.paymentStatus === 'paid'
                         ? 'Payment Verified'
@@ -508,8 +529,12 @@ export const AccountPage: React.FC = () => {
                     <p className="text-xs font-bold uppercase tracking-luxury text-brand-black">
                       2. Atelier QC &amp; Pack
                     </p>
-                    <p className="text-[11px] text-brand-stone">{currentTrackOrder.orderStatus}</p>
-                    <p className="text-[10px] text-brand-gold font-medium">Packing status</p>
+                    <p className="text-[11px] text-brand-stone">
+                      {currentTrackOrder.orderStatus}
+                    </p>
+                    <p className="text-[10px] text-brand-gold font-medium">
+                      Packing status
+                    </p>
                   </div>
                 </div>
 
@@ -522,7 +547,9 @@ export const AccountPage: React.FC = () => {
                       3. Express Transit
                     </p>
                     <p className="text-[11px] text-brand-stone">
-                      {currentTrackOrder.trackingNumber ? 'Tracking assigned' : 'Awaiting dispatch'}
+                      {currentTrackOrder.trackingNumber
+                        ? 'Tracking assigned'
+                        : 'Awaiting dispatch'}
                     </p>
                   </div>
                 </div>
@@ -536,7 +563,9 @@ export const AccountPage: React.FC = () => {
                       4. Doorstep Handover
                     </p>
                     <p className="text-[11px] text-brand-stone">
-                      {currentTrackOrder.orderStatus === 'delivered' ? 'Delivered' : 'Upcoming'}
+                      {currentTrackOrder.orderStatus === 'delivered'
+                        ? 'Delivered'
+                        : 'Upcoming'}
                     </p>
                     <p className="text-[10px] text-brand-stone">
                       {currentTrackOrder.shippingAddress.city}
@@ -577,7 +606,9 @@ export const AccountPage: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-sm text-brand-black">{addr.fullName}</h4>
+                    <h4 className="font-bold text-sm text-brand-black">
+                      {addr.fullName}
+                    </h4>
                     {addr.isDefault ? (
                       <span className="px-2 py-0.5 bg-brand-gold/10 text-brand-gold border border-brand-gold/30 text-[9px] uppercase font-bold tracking-luxury">
                         Default
@@ -594,8 +625,12 @@ export const AccountPage: React.FC = () => {
                   <div className="text-xs text-brand-stone mt-2 space-y-0.5">
                     <p>{addr.addressLine1}</p>
                     {addr.addressLine2 && <p>{addr.addressLine2}</p>}
-                    <p>{addr.city}, {addr.state} - {addr.pincode}</p>
-                    <p className="pt-1 text-brand-charcoal">Phone: {addr.phone}</p>
+                    <p>
+                      {addr.city}, {addr.state} - {addr.pincode}
+                    </p>
+                    <p className="pt-1 text-brand-charcoal">
+                      Phone: {addr.phone}
+                    </p>
                   </div>
                 </div>
 
@@ -636,6 +671,7 @@ export const AccountPage: React.FC = () => {
                       required
                       value={newFullName}
                       onChange={(e) => setNewFullName(e.target.value)}
+                      placeholder="Enter full name"
                       className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                     />
                   </div>
@@ -650,6 +686,7 @@ export const AccountPage: React.FC = () => {
                         required
                         value={newPhone}
                         onChange={(e) => setNewPhone(e.target.value)}
+                        placeholder="Enter mobile number"
                         className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                       />
                     </div>
@@ -662,6 +699,10 @@ export const AccountPage: React.FC = () => {
                         required
                         value={newPincode}
                         onChange={(e) => setNewPincode(e.target.value)}
+                        placeholder="6-digit pincode"
+                        maxLength={6}
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
                         className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                       />
                     </div>
@@ -676,6 +717,7 @@ export const AccountPage: React.FC = () => {
                       required
                       value={newAddressLine1}
                       onChange={(e) => setNewAddressLine1(e.target.value)}
+                      placeholder="House, building, street"
                       className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                     />
                   </div>
@@ -688,6 +730,8 @@ export const AccountPage: React.FC = () => {
                       type="text"
                       value={newAddressLine2}
                       onChange={(e) => setNewAddressLine2(e.target.value)}
+                      onChangeCapture={undefined}
+                      placeholder="Apartment, landmark, area"
                       className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                     />
                   </div>
@@ -702,6 +746,7 @@ export const AccountPage: React.FC = () => {
                         required
                         value={newCity}
                         onChange={(e) => setNewCity(e.target.value)}
+                        placeholder="Enter your city"
                         className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                       />
                     </div>
@@ -714,6 +759,7 @@ export const AccountPage: React.FC = () => {
                         required
                         value={newState}
                         onChange={(e) => setNewState(e.target.value)}
+                        placeholder="Enter your state"
                         className="w-full bg-brand-offwhite border border-brand-stone/30 px-3 py-2 text-xs text-brand-black focus:outline-none focus:border-brand-gold"
                       />
                     </div>
@@ -774,7 +820,8 @@ export const AccountPage: React.FC = () => {
                 Your Wishlist is Empty
               </h4>
               <p className="text-xs text-brand-stone">
-                Tap the heart icon on any product card to curate your wishlist here.
+                Tap the heart icon on any product card to curate your wishlist
+                here.
               </p>
               <button
                 onClick={() => navigateTo('shop')}
