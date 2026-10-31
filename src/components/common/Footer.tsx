@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-semibold tracking-luxury uppercase text-brand-ivory">
-                7-Day Returns & Exchanges
+                2-Day Returns & Exchanges
               </h4>
               <p className="text-xs text-brand-stone mt-0.5">
                 Effortless return process via door pickup

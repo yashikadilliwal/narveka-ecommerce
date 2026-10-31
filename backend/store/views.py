@@ -199,12 +199,11 @@ def create_order(request):
 
         shipping_fee = (
             Decimal("0")
-            if subtotal >= Decimal("2499")
-            else Decimal("199")
+            if subtotal >= Decimal("2000")
+            else Decimal("9")
         )
 
-        if shipping_method == "priority":
-            shipping_fee += Decimal("150")
+        
 
         total = max(Decimal("0"), subtotal - discount + shipping_fee)
 
