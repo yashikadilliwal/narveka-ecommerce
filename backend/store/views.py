@@ -200,7 +200,7 @@ def create_order(request):
         shipping_fee = (
             Decimal("0")
             if subtotal >= Decimal("2000")
-            else Decimal("9")
+            else Decimal("99")
         )
 
         

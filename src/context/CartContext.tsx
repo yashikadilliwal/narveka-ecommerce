@@ -175,7 +175,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const shippingFee = useMemo(() => {
     if (subtotal === 0) return 0;
-    return subtotal >= BRAND.freeShippingThreshold ? 0 : 9;
+    return subtotal >= BRAND.freeShippingThreshold ? 0 : 99;
   }, [subtotal]);
 
   const total = useMemo(() => {
