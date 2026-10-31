@@ -21,7 +21,7 @@ export const BRAND = {
     code: 'INR',
     rate: 1, // Base in INR
   },
-  freeShippingThreshold: 2499,
+  freeShippingThreshold: 2000,
   socials: {
     instagram: 'https://instagram.com/narvekaclothing',
     facebook: 'https://facebook.com/narvekaclothing',

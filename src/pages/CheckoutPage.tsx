@@ -40,8 +40,9 @@ export const CheckoutPage: React.FC = () => {
   const [state, setState] = useState(defaultAddr?.state || '');
   const [pincode, setPincode] = useState(defaultAddr?.pincode || '');
 
-  // Shipping method
-  const [shippingMethod, setShippingMethod] = useState<'standard' | 'priority'>('standard');
+  // Standard shipping only
+  const effectiveShipping = shippingFee;
+  const grandTotal = total;
 
   // Razorpay is the only payment method
   const [razorpayMethod, setRazorpayMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
@@ -65,10 +66,6 @@ export const CheckoutPage: React.FC = () => {
       </div>
     );
   }
-
-  const effectiveShipping =
-    shippingMethod === 'priority' ? shippingFee + 150 : shippingFee;
-  const grandTotal = total + (shippingMethod === 'priority' ? 150 : 0);
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +110,7 @@ export const CheckoutPage: React.FC = () => {
         quantity: item.quantity,
       })),
       shippingAddress,
-      shippingMethod,
+      shippingMethod: 'standard',
       couponCode: appliedCoupon || '',
       paymentMethod: 'razorpay',
     };
@@ -357,61 +354,36 @@ export const CheckoutPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Shipping speed */}
+              {/* Standard shipping only */}
               <div className="pt-2 space-y-2">
                 <label className="text-xs uppercase tracking-wider text-brand-charcoal font-semibold">
                   Delivery Method
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label
-                    onClick={() => setShippingMethod('standard')}
-                    className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${
-                      shippingMethod === 'standard'
-                        ? 'border-brand-black bg-brand-ivory ring-1 ring-brand-black'
-                        : 'border-brand-lightgrey bg-brand-ivory/60'
-                    }`}
-                  >
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-start gap-3 p-3 border border-brand-black bg-brand-ivory ring-1 ring-brand-black">
                     <input
                       type="radio"
                       name="shippingMethod"
-                      checked={shippingMethod === 'standard'}
-                      onChange={() => setShippingMethod('standard')}
+                      checked
+                      readOnly
                       className="mt-0.5 accent-brand-black"
                     />
+
                     <div className="text-xs">
-                      <p className="font-semibold text-brand-black">Standard Express Air</p>
-                      <p className="text-brand-stone text-[11px]">3 - 5 Business Days</p>
+                      <p className="font-semibold text-brand-black">
+                        Standard Express Air
+                      </p>
+                      <p className="text-brand-stone text-[11px]">
+                        3 - 5 Business Days
+                      </p>
                       <p className="font-medium text-emerald-700 mt-1">
                         {shippingFee === 0
                           ? 'Complimentary'
                           : `${BRAND.currency.symbol}${shippingFee}`}
                       </p>
                     </div>
-                  </label>
-
-                  <label
-                    onClick={() => setShippingMethod('priority')}
-                    className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${
-                      shippingMethod === 'priority'
-                        ? 'border-brand-black bg-brand-ivory ring-1 ring-brand-black'
-                        : 'border-brand-lightgrey bg-brand-ivory/60'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="shippingMethod"
-                      checked={shippingMethod === 'priority'}
-                      onChange={() => setShippingMethod('priority')}
-                      className="mt-0.5 accent-brand-black"
-                    />
-                    <div className="text-xs">
-                      <p className="font-semibold text-brand-black">Next-Day Priority Atelier</p>
-                      <p className="text-brand-stone text-[11px]">1 - 2 Business Days</p>
-                      <p className="font-medium text-brand-black mt-1">
-                        +{BRAND.currency.symbol}150
-                      </p>
-                    </div>
-                  </label>
+                  </div>
                 </div>
               </div>
             </div>
