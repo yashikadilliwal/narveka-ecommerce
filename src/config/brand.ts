@@ -23,7 +23,7 @@ export const BRAND = {
   },
   freeShippingThreshold: 2000,
   socials: {
-    instagram: 'https://instagram.com/narvekaclothing',
+    instagram: 'https://instagram.com/narveka_official',
     facebook: 'https://facebook.com/narvekaclothing',
     pinterest: 'https://pinterest.com/narveka',
   },
