@@ -37,13 +37,18 @@ class ImageSerializer(serializers.ModelSerializer):
 
     def get_url(self, obj):
         request = self.context.get("request")
+
         if obj.external_url:
             return obj.external_url
-        return (
-            request.build_absolute_uri(obj.image.url)
-            if request and obj.image
-            else (obj.image.url if obj.image else "")
-        )
+
+        if obj.image:
+            return (
+                request.build_absolute_uri(obj.image.url)
+                if request
+                else obj.image.url
+            )
+
+        return ""
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -131,6 +136,7 @@ class ProductSerializer(serializers.ModelSerializer):
         seen = {}
         for v in obj.variants.all():
             seen[v.color_name] = v.color_hex
+
         return [
             {"name": name, "hex": color_hex}
             for name, color_hex in seen.items()
@@ -168,6 +174,7 @@ class AddressSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         d = super().to_representation(instance)
+
         return {
             "id": d["id"],
             "fullName": d["full_name"],
@@ -214,13 +221,30 @@ class OrderItemSerializer(serializers.ModelSerializer):
         ]
 
     def get_image(self, obj):
-        image = obj.product.images.first()
-        request = self.context.get("request")
-        return (
-            request.build_absolute_uri(image.image.url)
-            if image and image.image and request
-            else (image.image.url if image and image.image else "")
-        )
+        product = obj.product
+
+        if not product:
+            return ""
+
+        image = product.images.first()
+
+        if not image:
+            return ""
+
+        # Support Cloudinary and other external image URLs.
+        if image.external_url:
+            return image.external_url
+
+        # Support uploaded images.
+        if image.image:
+            request = self.context.get("request")
+
+            if request:
+                return request.build_absolute_uri(image.image.url)
+
+            return image.image.url
+
+        return ""
 
 
 class OrderSerializer(serializers.ModelSerializer):
