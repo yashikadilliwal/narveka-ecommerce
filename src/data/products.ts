@@ -378,7 +378,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 
 export const CATEGORIES = [
   { id: 'all', name: 'All Collection' },
-  { id: 't-shirts', name: 'T-Shirts' },
+  { id: 'z-shirts', name: 'Z-Shirts' },
   { id: 'hoodies', name: 'Hoodies' },
   { id: 'shirts', name: 'Shirts' },
   { id: 'pants', name: 'Trousers & Pants' },

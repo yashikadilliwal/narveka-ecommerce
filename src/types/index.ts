@@ -1,6 +1,6 @@
 export type CategoryType =
   | 'all'
-  | 't-shirts'
+  | 'z-shirts'
   | 'hoodies'
   | 'shirts'
   | 'pants'
