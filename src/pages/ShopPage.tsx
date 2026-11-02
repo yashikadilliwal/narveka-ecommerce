@@ -90,7 +90,7 @@ export const ShopPage: React.FC = () => {
       if (sortBy === 'rating') return b.rating - a.rating;
       return 0; // featured / default
     });
-  }, [selectedCategory, selectedSizes, selectedColors, maxPrice, sortBy]);
+  }, [products, selectedCategory, selectedSizes, selectedColors, maxPrice, sortBy]);
 
   const currentCategoryLabel =
     CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'All Streetwear';
