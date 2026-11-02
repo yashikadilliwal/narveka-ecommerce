@@ -1,11 +1,14 @@
 export type CategoryType =
   | 'all'
+  | 't-shirts'
   | 'z-shirts'
   | 'hoodies'
   | 'shirts'
   | 'pants'
   | 'new-arrivals'
-  | 'best-sellers';
+  | 'best-sellers'
+  | 'fusion-house'
+  | 'sanskriti-20';
 
 export interface ProductColor {
   name: string;

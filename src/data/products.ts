@@ -378,6 +378,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 
 export const CATEGORIES = [
   { id: 'all', name: 'All Collection' },
+  { id: 't-shirts', name: 'T-Shirts' },
   { id: 'z-shirts', name: 'Z-Shirts' },
   { id: 'hoodies', name: 'Hoodies' },
   { id: 'shirts', name: 'Shirts' },
@@ -385,6 +386,7 @@ export const CATEGORIES = [
   { id: 'new-arrivals', name: 'New Arrivals' },
   { id: 'best-sellers', name: 'Best Sellers' },
 ];
+
 
 export const LOOKBOOK_GALLERY = [
   {
